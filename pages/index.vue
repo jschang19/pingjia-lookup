@@ -68,6 +68,7 @@ const handleSearch = async () => {
 	});
 	shops.value = apiShops.value!.shops || [];
 	total.value = apiShops.value!.total || 0;
+	page.value = 1;
 };
 
 const handlePageChange = async (page: number) => {
