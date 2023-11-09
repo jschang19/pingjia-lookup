@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@nuxt/ui": "^2.10.0",
+    "chinese-simple2traditional": "^1.2.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "lucide-vue-next": "^0.292.0",

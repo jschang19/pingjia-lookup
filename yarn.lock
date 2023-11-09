@@ -2095,6 +2095,11 @@ chalk@^5.3.0:
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.3.0.tgz#67c20a7ebef70e7f3970a01f90fa210cb6860385"
   integrity sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==
 
+chinese-simple2traditional@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/chinese-simple2traditional/-/chinese-simple2traditional-1.2.0.tgz#40721e1a1a94d790d175da235a92221053430c3f"
+  integrity sha512-0DbXpBBOZzQBklJb/6ykZzsw0ykay95JK3byoQG+YAlFzJn+G6aIPNPQk3/T+whxSJm5J384xLsvQY77km6inA==
+
 chokidar@^3.5.1, chokidar@^3.5.3:
   version "3.5.3"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.5.3.tgz#1cf37c8707b932bd1af1ae22c0432e2acd1903bd"
