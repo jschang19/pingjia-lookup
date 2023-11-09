@@ -1,5 +1,5 @@
-import { totalmem } from "os";
 import ShopService from "~/utils/mysql/shop";
+import { traditionToSimple } from "chinese-simple2traditional";
 
 export default eventHandler(async (event) => {
 	try {
@@ -7,7 +7,6 @@ export default eventHandler(async (event) => {
 		const data = await readBody(event);
 
 		const { name: searchName, city: searchCity, current, pageSize } = data;
-		console.log(data);
 
 		if (!data.name && !data.city) {
 			setResponseStatus(event, 400);
@@ -28,14 +27,17 @@ export default eventHandler(async (event) => {
 			rows: any[];
 		} = { total: 0, rows: [] };
 
+		// translate searchName to simplified Chinese
+		// since the database is in simplified Chinese
+		const simplifySearchName = traditionToSimple(searchName);
+
 		if (searchName && searchCity) {
-			results = await ShopService.getByCityAndName(searchCity, searchName, current, pageSize);
+			results = await ShopService.getByCityAndName(searchCity, simplifySearchName, current, pageSize);
 		} else if (searchName) {
-			results = await ShopService.getByName(searchName, current, pageSize);
+			results = await ShopService.getByName(simplifySearchName, current, pageSize);
 		} else {
 			results = await ShopService.getByCity(searchCity, current, pageSize);
 		}
-		console.log(results.rows.length);
 		shops = parseResults(results.rows);
 
 		// return result as json
