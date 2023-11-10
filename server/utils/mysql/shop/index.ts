@@ -178,7 +178,7 @@ const ShopService: {
 	getById: async (id: string) => {
 		const connection = await initConnection();
 		const [rows] = await connection.query<RowDataPacket[]>(
-			`SELECT s.* , avgScore.*  FROM shop AS s 
+			`SELECT s.* , c.CityName ,avgScore.*  FROM shop AS s 
 				JOIN shopcity AS sc ON s.shopid = sc.shopid
 				JOIN city AS c ON c.cityid = sc.cityid
 				LEFT JOIN (
