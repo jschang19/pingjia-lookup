@@ -1,5 +1,5 @@
-import ReviewService from "@/server/utils/mysql/review";
-import { parseReviewResults } from "@/server/utils/parse";
+import CommentService from "@/server/utils/mysql/comment";
+import { parseCommentResults } from "@/server/utils/parse";
 
 export default eventHandler(async (event) => {
 	const { shopid: shopId } = event.context.params as { shopid: string };
@@ -18,7 +18,7 @@ export default eventHandler(async (event) => {
 		return;
 	}
 
-	const results = await ReviewService.getByShopId(shopId, current, pageSize, "CommentID");
+	const results = await CommentService.getByShopId(shopId, current, pageSize, orderBy);
 
 	setResponseStatus(event, 200);
 	setResponseHeader(event, "Content-Type", "application/json");
@@ -26,7 +26,7 @@ export default eventHandler(async (event) => {
 		event,
 		JSON.stringify({
 			total: results.total,
-			reviews: parseReviewResults(results.rows),
+			comments: parseCommentResults(results.rows),
 		}),
 	);
 });
