@@ -17,11 +17,11 @@ const props = defineProps({
 	},
 });
 
-const shopUrl = computed(() => `/review/${props.shop.id}`);
+const commentUrl = computed(() => `/comment/${props.shop.id}`);
 </script>
 
 <template>
-	<UCard class="w-full" as="a" :href="shopUrl">
+	<UCard class="w-full" as="a" :href="commentUrl">
 		<div class="flex flex-col gap-2">
 			<div class="flex flex-row gap-3">
 				<h6 class="text-lg font-bold self-center">{{ props.shop.name }}</h6>
