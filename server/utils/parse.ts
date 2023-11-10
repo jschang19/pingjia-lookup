@@ -8,9 +8,17 @@ export function parseShopResults(rows: any[]) {
 			city: row.CityID,
 			cityName: row.CityName,
 			commentCount: row.actualCommentCount,
-			averagePrice: row.AvgPrice,
+			averagePrice: row.AvgPrice || "無資料",
 			averageScore,
-			address: row.ShopAddress,
+			ratingCounts: {
+				0: Number(row.RatingCount0) || 0,
+				1: Number(row.RatingCount1) || 0,
+				2: Number(row.RatingCount2) || 0,
+				3: Number(row.RatingCount3) || 0,
+				4: Number(row.RatingCount4) || 0,
+				5: Number(row.RatingCount5) || 0,
+			},
+			address: row.ShopAddress || "無資料",
 		};
 	});
 }
