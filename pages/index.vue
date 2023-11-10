@@ -144,7 +144,7 @@ watch(
 			</USelectMenu>
 			<div class="flex row gap-3 grow">
 				<UInput placeholder="請輸入關鍵字" size="lg" class="grow" v-model="searchData.name" />
-				<UButton size="lg" color="black" @click="handleSearch">搜尋</UButton>
+				<UButton size="lg" color="black" @click="handleSearch" class="px-5">搜尋</UButton>
 			</div>
 		</div>
 		<div class="gap-4 my-4">
