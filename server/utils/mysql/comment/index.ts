@@ -1,7 +1,7 @@
 import initConnection from "@/server/utils/mysql/connection";
 import { type RowDataPacket } from "mysql2/promise";
 
-interface ReviewService {
+interface CommentService {
 	getByShopId: (
 		shopId: string,
 		offset: number,
@@ -13,7 +13,7 @@ interface ReviewService {
 	}>;
 }
 
-const ReviewService: ReviewService = {
+const CommentService: CommentService = {
 	getByShopId: async (shopId: string, offset: number, pageSize: number, orderBy: string) => {
 		const connection = await initConnection();
 
@@ -21,7 +21,10 @@ const ReviewService: ReviewService = {
 			case "score":
 				orderBy = "CommentTaste DESC, CommentEnvironment DESC, CommentService DESC";
 				break;
-			case "date":
+			case "score_asc":
+				orderBy = "CommentTaste ASC, CommentEnvironment ASC, CommentService ASC";
+				break;
+			case "latest":
 				orderBy = "CommentDate DESC";
 				break;
 			default:
@@ -45,4 +48,4 @@ const ReviewService: ReviewService = {
 	},
 };
 
-export default ReviewService;
+export default CommentService;
