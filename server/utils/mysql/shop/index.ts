@@ -8,7 +8,7 @@ const ShopService: {
 		pageSize: number,
 	) => Promise<{
 		total: number;
-		rows: any[] | any;
+		rows: RowDataPacket[];
 	}>;
 	getByCity: (
 		city: string,
@@ -16,7 +16,7 @@ const ShopService: {
 		pageSize: number,
 	) => Promise<{
 		total: number;
-		rows: any[] | any;
+		rows: RowDataPacket[];
 	}>;
 	getByCityAndName: (
 		city: string,
@@ -25,8 +25,9 @@ const ShopService: {
 		pageSize: number,
 	) => Promise<{
 		total: number;
-		rows: any[] | any;
+		rows: RowDataPacket[];
 	}>;
+	getById: (id: string) => Promise<RowDataPacket[]>;
 } = {
 	getByName: async (name: string, offset: number, pageSize: number) => {
 		const connection = await initConnection();
@@ -37,7 +38,19 @@ const ShopService: {
 				[likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
-				"SELECT * FROM shop AS s JOIN shopcity AS sc ON s.shopid = sc.shopid JOIN city AS c ON c.cityid = sc.cityid  WHERE `ShopName` LIKE ? ORDER BY s.shopid LIMIT ?, ?",
+				`SELECT s.*, c.CityName, COALESCE(commentData.actualCommentCount, 0) as actualCommentCount
+				FROM shop as s
+				LEFT JOIN shopcity AS sc ON s.shopid = sc.shopid
+				LEFT JOIN city AS c ON c.cityid = sc.cityid
+				LEFT JOIN (
+						SELECT shopid, COUNT(commentid) as actualCommentCount
+						FROM shopcomment
+						GROUP BY shopid
+				) AS commentData ON s.shopid = commentData.shopid
+				WHERE s.shopname like ?
+				ORDER BY s.shopid
+				LIMIT ?, ?;
+				`,
 				[likeTerm, offset, pageSize],
 			),
 		]);
@@ -57,7 +70,18 @@ const ShopService: {
 				[city],
 			),
 			connection.query<RowDataPacket[]>(
-				"SELECT * FROM shopcity AS sc JOIN shop AS s ON s.shopid = sc.ShopId JOIN city AS c ON c.cityid = sc.cityid WHERE sc.CityID = ? ORDER BY s.shopid LIMIT ?, ?",
+				`SELECT s.*, c.CityName, COALESCE(commentData.actualCommentCount, 0) as actualCommentCount
+				FROM shop AS s
+				LEFT JOIN (
+						SELECT shopid, COUNT(commentid) as actualCommentCount
+						FROM shopcomment
+						GROUP BY shopid
+				) AS commentData ON s.shopid = commentData.shopid
+				JOIN shopcity AS sc ON s.shopid = sc.ShopId
+				JOIN city AS c ON c.cityid = sc.cityid
+				WHERE sc.CityID = ?
+				ORDER BY s.shopid
+				LIMIT ?, ?;`,
 				[city, offset, pageSize],
 			),
 		]);
@@ -81,7 +105,16 @@ const ShopService: {
 				[city, likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
-				"SELECT * FROM shopcity AS sc JOIN shop AS s ON s.shopid = sc.ShopId JOIN city AS c ON c.cityid = sc.cityid WHERE sc.CityID = ? AND s.ShopName LIKE ? LIMIT ?, ?",
+				`SELECT s.*, c.CityName, COALESCE(commentData.actualCommentCount, 0) as actualCommentCount
+				FROM shopcity AS sc 
+				JOIN shop AS s ON s.shopid = sc.ShopId 
+				JOIN city AS c ON c.cityid = sc.cityid 
+				LEFT JOIN (
+						SELECT shopid, COUNT(commentid) as actualCommentCount
+						FROM shopcomment
+						GROUP BY shopid
+				) AS commentData ON s.shopid = commentData.shopid
+				WHERE sc.CityID = ? AND s.ShopName LIKE ? LIMIT ?, ?`,
 				[city, likeTerm, offset, pageSize],
 			),
 		]);
@@ -90,6 +123,16 @@ const ShopService: {
 			total: total[0].total,
 			rows: rows,
 		};
+	},
+
+	getById: async (id: string) => {
+		const connection = await initConnection();
+		const [rows] = await connection.query<RowDataPacket[]>(
+			"SELECT * FROM shop AS s JOIN shopcity AS sc ON s.shopid = sc.shopid JOIN city AS c ON c.cityid = sc.cityid WHERE s.shopid = ? LIMIT 1",
+			[id],
+		);
+		await connection.end();
+		return rows;
 	},
 };
 
