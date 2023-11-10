@@ -11,6 +11,7 @@ interface ShopInfo {
 	averagePrice: string;
 	rating: string;
 	address: string;
+	cityName: string;
 }
 
 interface Response {
