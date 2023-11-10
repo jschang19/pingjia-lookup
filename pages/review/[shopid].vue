@@ -48,7 +48,6 @@ const handlePageChange = async (page: number) => {
 
 	// set reviews
 	reviews.value = data.value!.reviews;
-	console.log(reviews.value);
 };
 
 const { data: apiReviews, error } = await useFetch<{
