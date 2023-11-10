@@ -23,7 +23,7 @@ export function parseShopResults(rows: any[]) {
 	});
 }
 
-export function parseReviewResults(results: any[]) {
+export function parseCommentResults(results: any[]) {
 	return results.map((result: any) => {
 		const average = Math.round((result.CommentTaste + result.CommentEnvironment + result.CommentService) / 3);
 		return {
