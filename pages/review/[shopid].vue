@@ -65,10 +65,6 @@ const { data: apiReviews, error } = await useFetch<{
 	}),
 });
 
-if (error.value) {
-	console.log(error);
-}
-
 const { data: ShopInfo } = await useFetch<{
 	shop: ShopInfo;
 }>(`/api/shop/${shopId}`, {
