@@ -178,15 +178,44 @@ const ShopService: {
 	getById: async (id: string) => {
 		const connection = await initConnection();
 		const [rows] = await connection.query<RowDataPacket[]>(
-			`SELECT s.* , c.CityName ,avgScore.*  FROM shop AS s 
-				JOIN shopcity AS sc ON s.shopid = sc.shopid
-				JOIN city AS c ON c.cityid = sc.cityid
-				LEFT JOIN (
-					SELECT AVG(CommentTaste) AS AvgTaste, AVG(CommentEnvironment) AS AvgEnvironment, AVG(CommentService) AS AvgService, shopid
-					FROM shopcomment
-					GROUP BY shopid
-				) AS avgScore ON avgScore.shopid = s.shopid
-				WHERE s.shopid = ? LIMIT 1`,
+			`SELECT 
+						s.*, 
+						c.CityName,
+						avgScore.*,
+						ratingCounts.*
+				FROM 
+						shop AS s 
+				JOIN 
+						shopcity AS sc ON s.shopid = sc.shopid
+				JOIN 
+						city AS c ON c.cityid = sc.cityid
+				LEFT JOIN 
+						(
+								SELECT 
+										shopid, 
+										AVG(CommentTaste) AS AvgTaste, 
+										AVG(CommentEnvironment) AS AvgEnvironment, 
+										AVG(CommentService) AS AvgService
+								FROM shopcomment
+								GROUP BY shopid
+						) AS avgScore ON avgScore.shopid = s.shopid
+				LEFT JOIN 
+						(
+								SELECT 
+										shopid,
+										COALESCE(SUM(CASE WHEN CommentTaste = 0 THEN 1 ELSE 0 END), 0) AS RatingCount0,
+										COALESCE(SUM(CASE WHEN CommentTaste = 1 THEN 1 ELSE 0 END), 0) AS RatingCount1,
+										COALESCE(SUM(CASE WHEN CommentTaste = 2 THEN 1 ELSE 0 END), 0) AS RatingCount2,
+										COALESCE(SUM(CASE WHEN CommentTaste = 3 THEN 1 ELSE 0 END), 0) AS RatingCount3,
+										COALESCE(SUM(CASE WHEN CommentTaste = 4 THEN 1 ELSE 0 END), 0) AS RatingCount4,
+										COALESCE(SUM(CASE WHEN CommentTaste = 5 THEN 1 ELSE 0 END), 0) AS RatingCount5
+								FROM shopcomment
+								GROUP BY shopid
+						) AS ratingCounts ON ratingCounts.shopid = s.shopid
+				WHERE 
+						s.shopid = ? 
+				LIMIT 1	
+				`,
 			[id],
 		);
 		await connection.end();
