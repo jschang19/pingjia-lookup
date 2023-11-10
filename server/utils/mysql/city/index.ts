@@ -1,4 +1,4 @@
-import initConnection from "@/utils/mysql/connection";
+import initConnection from "@/server/utils/mysql/connection";
 
 const CityService: {
 	getCities: () => Promise<any>;

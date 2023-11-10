@@ -1,4 +1,4 @@
-import CityService from "~/utils/mysql/city";
+import CityService from "@/server/utils/mysql/city";
 export default eventHandler(async (event) => {
 	const cities = await CityService.getCities();
 	setResponseStatus(event, 200);
