@@ -9,6 +9,7 @@ interface ShopInfo {
 	branch: string;
 	commentCount: string;
 	averagePrice: string;
+	averageScore: number;
 	rating: string;
 	address: string;
 	cityName: string;
@@ -128,7 +129,12 @@ watch(
 </script>
 <template>
 	<div class="w-full my-[120px] mx-auto">
-		<h1 class="mb-12 text-4xl font-bold u-text-white text-left">餐廳評價</h1>
+		<div class="flex flex-col gap-3 mb-6">
+			<h1 class="text-3xl font-bold u-text-white text-left">評呷名</h1>
+			<h2 class="text-md text-gray-500 dark:text-gray-300 font-medium u-text-white text-left">
+				Find something good to eat 😋
+			</h2>
+		</div>
 		<div class="flex flex-col md:flex-row gap-3">
 			<USelectMenu
 				v-model="searchData.city"

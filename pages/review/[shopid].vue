@@ -20,6 +20,7 @@ interface ShopInfo {
 	branch: string;
 	commentCount: string;
 	averagePrice: string;
+	averageScore: number;
 	cityName: string;
 	rating: string;
 	address: string;
@@ -64,7 +65,7 @@ const { data: apiReviews, error } = await useFetch<{
 	}),
 });
 
-if (error) {
+if (error.value) {
 	console.log(error);
 }
 
@@ -107,9 +108,9 @@ watch(
 				{{ shopInfo?.name }} <span>{{ shopInfo?.branch }}</span>
 			</h1>
 			<UButton to="/" class="max-w-max" color="white">返回</UButton>
-			<p>地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
+			<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
 			<div class="flex flex-row">
-				<p class="text-xl font-medium">評價 {{ shopInfo?.rating }}</p>
+				<p class="text-xl font-medium">評價 {{ shopInfo?.averageScore }}</p>
 			</div>
 		</div>
 		<div class="flex flex-col gap-4 my-4">

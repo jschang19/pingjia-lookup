@@ -5,6 +5,7 @@ interface Shop {
 	branch: string;
 	commentCount: string;
 	averagePrice: string;
+	averageScore: number;
 	cityName: string;
 	address: string;
 }
@@ -28,11 +29,15 @@ const shopUrl = computed(() => `/review/${props.shop.id}`);
 			</div>
 			<div class="flex flex-col gap-1 text-gray-600 dark:text-gray-400">
 				<span class="text-sm"
+					><UIcon name="i-heroicons-star" class="text-gray-400 self-end" />
+					{{ props.shop.averageScore > 0 ? props.shop.averageScore + " / 5" : "無評價" }}</span
+				>
+				<span class="text-sm"
 					><UIcon name="i-heroicons-chat-bubble-bottom-center-text" class="text-gray-400 self-end" />
 					{{ props.shop.commentCount }} 則評論</span
 				>
 				<span class="text-sm"
-					><UIcon name="i-heroicons-currency-dollar" class="text-gray-400 self-end" /> 平均消費
+					><UIcon name="i-heroicons-currency-dollar" class="text-gray-400 self-end" />
 					{{ props.shop.averagePrice }} RMB</span
 				>
 				<span class="text-sm"

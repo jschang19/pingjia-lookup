@@ -1,4 +1,5 @@
 import ReviewService from "@/server/utils/mysql/review";
+import { parseReviewResults } from "@/server/utils/parse";
 
 export default eventHandler(async (event) => {
 	const { shopid: shopId } = event.context.params as { shopid: string };
@@ -18,6 +19,7 @@ export default eventHandler(async (event) => {
 	}
 
 	const results = await ReviewService.getByShopId(shopId, current, pageSize, "CommentID");
+
 	setResponseStatus(event, 200);
 	setResponseHeader(event, "Content-Type", "application/json");
 	await send(
@@ -28,31 +30,3 @@ export default eventHandler(async (event) => {
 		}),
 	);
 });
-
-function parseReviewResults(results: any[]) {
-	return results.map((result: any) => {
-		const average = Math.round((result.CommentTaste + result.CommentEnvironment + result.CommentService) / 3);
-		return {
-			id: result.CommentID,
-			shopId: result.ShopID,
-			author: result.Author,
-			scores: {
-				taste: result.CommentTaste,
-				environment: result.CommentEnvironment,
-				service: result.CommentService,
-				average,
-			},
-			content: result.Review,
-			averagePrice: result.AvgPrice,
-			createdAt: parseDate(result.CommentDate),
-		};
-	});
-}
-function parseDate(date: string) {
-	// yyyy-mm-dd
-	const dateObj = new Date(date);
-	const year = dateObj.getFullYear();
-	const month = dateObj.getMonth() + 1;
-	const day = dateObj.getDate();
-	return `${year}-${month}-${day}`;
-}
