@@ -1,7 +1,9 @@
 <script setup lang="ts">
 const page = ref(1);
 const total = ref(0);
+const toast = useToast();
 const hasSearched = ref(false);
+const isLoading = ref(false);
 
 interface ShopInfo {
 	id: string;
@@ -56,21 +58,35 @@ const shops = ref<ShopInfo[]>([]);
 
 const handleSearch = async () => {
 	if (!searchData.city && !searchData.name) {
+		toast.add({
+			id: "search_input_required",
+			title: "請至少輸入一個搜尋條件",
+			icon: "i-heroicons-information-circle",
+			timeout: 2200,
+		});
 		return;
 	}
 	hasSearched.value = true;
-	// post to api
-	const { data: apiShops } = await useFetch<Response>("/api/search", {
-		method: "POST",
-		body: JSON.stringify({
-			...searchData,
-			current: 0,
-			pageSize: 10,
-		}),
-	});
-	shops.value = apiShops.value!.shops || [];
-	total.value = apiShops.value!.total || 0;
-	page.value = 1;
+	isLoading.value = true;
+	try {
+		// post to api
+		const { data: apiShops } = await useFetch<Response>("/api/search", {
+			method: "POST",
+			body: JSON.stringify({
+				...searchData,
+				current: 0,
+				pageSize: 10,
+			}),
+		});
+		shops.value = apiShops.value!.shops || [];
+		total.value = apiShops.value!.total || 0;
+		page.value = 1;
+		isLoading.value = false;
+	} catch (e) {
+		console.log(e);
+	} finally {
+		isLoading.value = false;
+	}
 };
 
 const handlePageChange = async (page: number) => {
@@ -161,7 +177,10 @@ watch(
 				<ShopResult v-for="shop in shops" :key="shop.id" :shop="shop" />
 				<UPagination v-if="hasShop" v-model="page" :page-count="10" :total="total" />
 			</div>
-			<div v-else-if="!hasShop && hasSearched" class="text-md text-center text-gray-300 mt-10">No Shops</div>
+			<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
+				沒有符合條件的餐廳
+			</div>
+			<div v-else-if="isLoading" class="text-sm text-gray-500 dark:text-gray-600 text-center mt-10">稍等一下</div>
 		</div>
 	</div>
 </template>
