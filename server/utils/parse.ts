@@ -6,8 +6,9 @@ export function parseShopResults(rows: any[]) {
 			branch: row.ShopBranch,
 			city: row.CityID,
 			cityName: row.CityName,
-			commentCount: row.CommentCount,
+			commentCount: row.actualCommentCount,
 			averagePrice: row.AvgPrice,
+			address: row.ShopAddress,
 		};
 	});
 }
