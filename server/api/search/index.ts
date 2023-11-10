@@ -1,5 +1,6 @@
-import ShopService from "~/utils/mysql/shop";
+import ShopService from "@/server/utils/mysql/shop";
 import { traditionToSimple } from "chinese-simple2traditional";
+import { parseShopResults } from "@/server/utils/parse";
 
 export default eventHandler(async (event) => {
 	try {
@@ -21,11 +22,11 @@ export default eventHandler(async (event) => {
 			return;
 		}
 
-		let shops: any[] = [];
 		let results: {
 			total: number;
 			rows: any[];
-		} = { total: 0, rows: [] };
+			shops?: any[];
+		} = { total: 0, rows: [], shops: [] };
 
 		// translate searchName to simplified Chinese
 		// since the database is in simplified Chinese
@@ -38,7 +39,7 @@ export default eventHandler(async (event) => {
 		} else {
 			results = await ShopService.getByCity(searchCity, current, pageSize);
 		}
-		shops = parseResults(results.rows);
+		results.shops = parseShopResults(results.rows);
 
 		// return result as json
 		setResponseStatus(event, 200);
@@ -47,7 +48,7 @@ export default eventHandler(async (event) => {
 			event,
 			JSON.stringify({
 				total: results.total,
-				shops,
+				shops: results.shops,
 			}),
 		);
 		return;
@@ -58,17 +59,3 @@ export default eventHandler(async (event) => {
 		return;
 	}
 });
-
-function parseResults(rows: any[]) {
-	return rows.map((row: any) => {
-		return {
-			id: row.ShopID,
-			name: row.ShopName,
-			branch: row.ShopBranch,
-			city: row.CityID,
-			cityName: row.CityName,
-			commentCount: row.CommentCount,
-			averagePrice: row.AvgPrice,
-		};
-	});
-}
