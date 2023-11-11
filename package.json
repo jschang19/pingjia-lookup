@@ -19,11 +19,13 @@
   },
   "dependencies": {
     "@nuxt/ui": "^2.10.0",
+    "@pinia/nuxt": "^0.5.1",
     "chinese-simple2traditional": "^1.2.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "lucide-vue-next": "^0.292.0",
     "mysql2": "^3.6.3",
+    "pinia": "^2.1.7",
     "radix-vue": "^1.1.1",
     "tailwind-merge": "^2.0.0",
     "tailwindcss-animate": "^1.0.7"
