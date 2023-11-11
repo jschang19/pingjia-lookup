@@ -12,7 +12,7 @@ export default eventHandler(async (event) => {
 
 	const results = await ShopService.getById(shopId);
 
-	if (results.length === 0) {
+	if (results[0].ShopID === null) {
 		setResponseStatus(event, 404);
 		await send(event, "Not Found");
 		return;
