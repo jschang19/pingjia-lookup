@@ -39,7 +39,7 @@ const ShopService: {
 				JOIN city AS c ON c.cityid = sc.cityid 
 				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
 				LEFT JOIN dish AS d ON d.dishid = sd.dishid
-				WHERE (shopname LIKE ? OR dishname LIKE ?)`,
+				WHERE shopname LIKE ? OR dishname LIKE ?`,
 				[likeTerm, likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
@@ -68,7 +68,6 @@ const ShopService: {
 								GROUP BY shopid
 						) AS avgScore ON avgScore.shopid = s.shopid
 				WHERE  s.shopname like ? OR d.dishname like ?
-				GROUP BY s.shopid
 				LIMIT ?, ?;
 				`,
 				[likeTerm, likeTerm, offset, pageSize],
@@ -246,7 +245,6 @@ const ShopService: {
 						) AS commentData ON s.shopid = commentData.shopid
 				WHERE 
 						s.shopid = ? 
-				GROUP BY s.shopid
 				LIMIT 1	
 				`,
 			[id],
