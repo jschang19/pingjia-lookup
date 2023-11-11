@@ -207,8 +207,8 @@ onDeactivated(() => {
 });
 </script>
 <template>
-	<ClientOnly>
-		<div class="w-full my-[120px] mx-auto">
+	<div class="w-full my-[120px] mx-auto">
+		<ClientOnly>
 			<div class="flex flex-col gap-3 mb-6">
 				<h1 class="text-3xl font-bold u-text-white text-left">評呷名</h1>
 				<h2 class="text-md text-gray-500 dark:text-gray-300 font-medium u-text-white text-left">
@@ -259,6 +259,6 @@ onDeactivated(() => {
 				</div>
 				<div v-else-if="isLoading" class="text-sm text-gray-500 dark:text-gray-600 text-center mt-10">稍等一下..</div>
 			</div>
-		</div>
-	</ClientOnly>
+		</ClientOnly>
+	</div>
 </template>
