@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSearchStore } from "~/stores/search";
+import { type ShopInfo } from "~/types/shop";
 definePageMeta({
 	title: "評呷名",
 	keepalive: true,
@@ -10,18 +11,6 @@ const total = ref(0);
 const toast = useToast();
 const hasSearched = ref(false);
 const isLoading = ref(false);
-
-interface ShopInfo {
-	id: string;
-	name: string;
-	branch: string;
-	commentCount: string;
-	averagePrice: string;
-	averageScore: number;
-	rating: string;
-	address: string;
-	cityName: string;
-}
 
 interface Response {
 	shops: ShopInfo[];
@@ -218,56 +207,58 @@ onDeactivated(() => {
 });
 </script>
 <template>
-	<div class="w-full my-[120px] mx-auto">
-		<div class="flex flex-col gap-3 mb-6">
-			<h1 class="text-3xl font-bold u-text-white text-left">評呷名</h1>
-			<h2 class="text-md text-gray-500 dark:text-gray-300 font-medium u-text-white text-left">
-				Find something good to eat 😋
-			</h2>
-		</div>
-		<div>
-			<UForm :state="searchStore.inputSearchData" class="flex flex-col md:flex-row gap-3" @submit="handleSearch">
-				<USelectMenu
-					v-model="searchStore.inputSearchData.city"
-					:options="cityOptions"
-					value-attribute="value"
-					size="lg"
-					class="max-md:max-w-full max-md:grow min-w-[125px]"
-					searchable
-					searchable-placeholder="請輸入城市"
-				>
-					<template #label>
-						{{ currentCity?.label || "請選擇城市" }}
-					</template>
-				</USelectMenu>
-				<div class="flex row gap-3 grow">
-					<UInput
-						:disabled="isLoading"
-						placeholder="請輸入餐廳名稱或分類"
+	<ClientOnly>
+		<div class="w-full my-[120px] mx-auto">
+			<div class="flex flex-col gap-3 mb-6">
+				<h1 class="text-3xl font-bold u-text-white text-left">評呷名</h1>
+				<h2 class="text-md text-gray-500 dark:text-gray-300 font-medium u-text-white text-left">
+					Find something good to eat 😋
+				</h2>
+			</div>
+			<div>
+				<UForm :state="searchStore.inputSearchData" class="flex flex-col md:flex-row gap-3" @submit="handleSearch">
+					<USelectMenu
+						v-model="searchStore.inputSearchData.city"
+						:options="cityOptions"
+						value-attribute="value"
 						size="lg"
-						class="grow"
-						v-model="searchStore.inputSearchData.name"
-					/>
-					<UButton :disabled="isLoading" size="lg" color="black" type="submit" class="px-5">搜尋</UButton>
+						class="max-md:max-w-full max-md:grow min-w-[125px]"
+						searchable
+						searchable-placeholder="請輸入城市"
+					>
+						<template #label>
+							{{ currentCity?.label || "請選擇城市" }}
+						</template>
+					</USelectMenu>
+					<div class="flex row gap-3 grow">
+						<UInput
+							:disabled="isLoading"
+							placeholder="請輸入餐廳名稱或分類"
+							size="lg"
+							class="grow"
+							v-model="searchStore.inputSearchData.name"
+						/>
+						<UButton :disabled="isLoading" size="lg" color="black" type="submit" class="px-5">搜尋</UButton>
+					</div>
+				</UForm>
+				<div class="flex justify-start md:justify-end mt-3">
+					<UButton size="xs" color="gray" @click="handleReset" variant="ghost">清除條件</UButton>
 				</div>
-			</UForm>
-			<div class="flex justify-start md:justify-end mt-3">
-				<UButton size="xs" color="gray" @click="handleReset" variant="ghost">清除條件</UButton>
+			</div>
+			<div class="gap-4 my-4">
+				<div v-if="hasShop" class="flex flex-col gap-3">
+					<UDivider />
+					<div class="flex flex-row justify-end gap-2">
+						<USelect size="sm" v-model="sortMethod" :options="sortOptions" />
+					</div>
+					<ShopResult v-for="shop in shops" :key="shop.id" :shop="shop" />
+					<UPagination v-if="hasShop && total > 10" v-model="searchStore.page" :page-count="10" :total="total" />
+				</div>
+				<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
+					沒有符合條件的餐廳
+				</div>
+				<div v-else-if="isLoading" class="text-sm text-gray-500 dark:text-gray-600 text-center mt-10">稍等一下..</div>
 			</div>
 		</div>
-		<div class="gap-4 my-4">
-			<div v-if="hasShop" class="flex flex-col gap-3">
-				<UDivider />
-				<div class="flex flex-row justify-end gap-2">
-					<USelect size="sm" v-model="sortMethod" :options="sortOptions" />
-				</div>
-				<ShopResult v-for="shop in shops" :key="shop.id" :shop="shop" />
-				<UPagination v-if="hasShop && total > 10" v-model="searchStore.page" :page-count="10" :total="total" />
-			</div>
-			<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
-				沒有符合條件的餐廳
-			</div>
-			<div v-else-if="isLoading" class="text-sm text-gray-500 dark:text-gray-600 text-center mt-10">稍等一下..</div>
-		</div>
-	</div>
+	</ClientOnly>
 </template>

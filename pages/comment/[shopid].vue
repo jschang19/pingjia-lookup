@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type ShopInfo } from "~/types/shop";
 interface Comment {
 	id: string;
 	content: string;
@@ -13,29 +14,6 @@ interface Comment {
 	};
 	createdAt: string;
 }
-
-interface ShopInfo {
-	id: string;
-	name: string;
-	branch: string;
-	commentCount: string;
-	averagePrice: string;
-	averageScore: number;
-	cityName: string;
-	rating: string;
-	address: string;
-	dishTypes: string[];
-	ratingCounts: {
-		0: number;
-		1: number;
-		2: number;
-		3: number;
-		4: number;
-		5: number;
-	};
-}
-
-type RatingCountKeys = keyof ShopInfo["ratingCounts"];
 
 const shopId = useRoute().params.shopid;
 const page = ref(1);
@@ -112,7 +90,6 @@ const fecthLoadMore = async (page: number) => {
 		orderBy: selectedSortOption.value.value,
 	});
 
-	// set comments
 	data.comments.forEach((comment) => {
 		comments.value.push(comment);
 	});
@@ -134,9 +111,9 @@ const { data: ShopInfo } = await useFetch<{
 	},
 });
 
-
 const hasReiew = computed(() => comments.value.length > 0);
 const hasMore = computed(() => comments.value.length < total.value);
+const hasShopInfo = computed(() => shopInfo.value !== undefined && shopInfo.value !== null);
 
 watchEffect(() => {
 	if (initialComments) {
@@ -155,6 +132,7 @@ watch(
 	() => selectedSortOption.value,
 	async () => {
 		if (selectedSortOption.value) {
+			if (total.value < 2) return; // no need to sort
 			await fecthNewSort(page.value);
 		}
 	},
@@ -163,61 +141,55 @@ watch(
 
 <template>
 	<div class="w-full my-[120px] mx-auto overflow-hidden">
-		<div class="flex flex-col gap-4 pb-6">
-			<div class="flex flex-col gap-2 pb-4">
-				<h1 class="text-2xl font-bold">
-					{{ shopInfo?.name }} <span>{{ shopInfo?.branch }}</span>
-				</h1>
-				<div class="flex gap-2">
-					<div class="flex items-center gap-1">
-						<UIcon name="i-heroicons-star-solid" class="text-yellow-400 text-md" />
-						<span>{{ shopInfo?.averageScore }}</span>
-						<span class="text-sm text-gray-400 dark:text-gray-700">( {{ shopInfo?.commentCount }} 則評論)</span>
+		<div v-if="hasShopInfo">
+			<ClientOnly>
+				<div class="flex flex-col gap-4 pb-6">
+					<CommentTopHeading :shopInfo="shopInfo!" />
+					<div class="flex flex-row">
+						<p class="text-xl font-medium">評論</p>
+					</div>
+					<div class="flex flex-row justify-stretch items-center">
+						<div class="flex flex-col gap-1 justify-center items-center w-1/2">
+							<CommentRatingOverview :averageScore="shopInfo?.averageScore!" :total="total" />
+						</div>
+						<div class="flex justify-center items-start w-2/5 md:w-1/4">
+							<CommentBarChart :ratingCounts="shopInfo?.ratingCounts!" :total="total" />
+						</div>
+					</div>
+					<UDivider />
+					<div class="flex flex-col gap-2">
+						<div class="flex justify-end pb-2">
+							<USelectMenu
+								v-if="hasReiew"
+								size="sm"
+								class="max-w-max min-w-[125px]"
+								v-model="selectedSortOption"
+								:options="sortOption"
+							/>
+						</div>
+						<div v-if="hasReiew" class="flex flex-col gap-1">
+							<CommentCard v-for="comment in comments" :key="comment.id" :comment="comment" />
+							<UButton v-show="hasMore" class="justify-center" variant="ghost" @click="handleLoadMore"
+								>顯示更多</UButton
+							>
+						</div>
+						<div v-else class="text-sm text-center text-gray-500 dark:text-gray-500">目前沒有評論</div>
 					</div>
 				</div>
-				<div class="flex gap-2">
-					<UBadge
-						:ui="{ rounded: 'rounded-full' }"
-						v-for="dishType in shopInfo?.dishTypes"
-						color="black"
-						variant="solid"
-						class="max-w-max"
-						>#{{ dishType }}</UBadge
-					>
+				<div class="flex flex-col gap-2">
+					<p class="text-xl font-medium">基本資訊</p>
+					<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
 				</div>
-			</div>
-			<div class="flex flex-row">
-				<p class="text-xl font-medium">評論</p>
-			</div>
-			<div class="flex flex-row justify-stretch items-center">
-				<div class="flex flex-col gap-1 justify-center items-center w-1/2">
-					<CommentRatingOverview :averageScore="shopInfo?.averageScore!" :total="total" />
-				</div>
-				<div class="flex justify-center items-start w-2/5 md:w-1/4">
-					<CommentBarChart :ratingCounts="shopInfo?.ratingCounts!" :total="total" />
-				</div>
-			</div>
-			<UDivider />
-			<div class="flex flex-col gap-2">
-				<div class="flex justify-end pb-2">
-					<USelectMenu
-						v-if="hasReiew"
-						size="sm"
-						class="max-w-max min-w-[125px]"
-						v-model="selectedSortOption"
-						:options="sortOption"
-					/>
-				</div>
-				<div v-if="hasReiew" class="flex flex-col gap-1">
-					<CommentCard v-for="comment in comments" :key="comment.id" :comment="comment" />
-					<UButton v-show="hasMore" class="justify-center" variant="ghost" @click="handleLoadMore">顯示更多</UButton>
-				</div>
-				<div v-else class="text-sm text-center text-gray-500 dark:text-gray-500">目前沒有評論</div>
-			</div>
+			</ClientOnly>
 		</div>
-		<div class="flex flex-col gap-2">
-			<p class="text-xl font-medium">基本資訊</p>
-			<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
+		<div v-else class="flex flex-col items-center gap-3">
+			<ClientOnly>
+				<div class="flex flex-col text-center gap-2">
+					<div class="text-xl font-bold">餐廳不存在</div>
+					<div class="text-sm">踏破鐵鞋尋覓處，轉角就有得來速</div>
+				</div>
+				<ULink to="/"><UButton size="sm" variant="ghost"> 回首頁 </UButton></ULink>
+			</ClientOnly>
 		</div>
 	</div>
 </template>
