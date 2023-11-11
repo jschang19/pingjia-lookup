@@ -34,7 +34,7 @@ const ShopService: {
 		const likeTerm = `%${name}%`;
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				`SELECT COUNT(*) AS total FROM shop AS s 
+				`SELECT COUNT(DISTINCT(s.shopid)) AS total FROM shop AS s 
 				JOIN shopcity AS sc ON s.shopid = sc.shopid
 				JOIN city AS c ON c.cityid = sc.cityid 
 				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
@@ -43,7 +43,7 @@ const ShopService: {
 				[likeTerm, likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
-				`SELECT s.*, c.CityName, COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
+				`SELECT DISTINCT s.*, c.CityName, COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 				COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 				COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
 				COALESCE(avgScore.AvgService, 0) as AvgService
@@ -85,14 +85,16 @@ const ShopService: {
 		const connection = await initConnection();
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				`SELECT COUNT(*) AS total FROM shopcity AS sc 
+				`SELECT COUNT(DISTINCT(s.shopid)) AS total FROM shopcity AS sc 
 						JOIN shop AS s ON s.shopid = sc.ShopId 
 						JOIN city AS c ON c.cityid = sc.cityid 
+						LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
+						LEFT JOIN dish AS d ON d.dishid = sd.dishid
 						WHERE sc.CityID = ?`,
 				[city],
 			),
 			connection.query<RowDataPacket[]>(
-				`SELECT s.*, c.CityName,
+				`SELECT DISTINCT s.*, c.CityName,
 					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
@@ -107,6 +109,10 @@ const ShopService: {
 						shopcity AS sc ON s.shopid = sc.ShopId
 				JOIN
 						city AS c ON c.cityid = sc.cityid
+				LEFT JOIN
+						shopdish AS sd ON s.shopid = sd.shopid
+				LEFT JOIN
+						dish AS d ON d.dishid = sd.dishid
 				LEFT JOIN 
 						(
 								SELECT 
@@ -139,7 +145,7 @@ const ShopService: {
 		// promise all
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				`SELECT COUNT(*) AS total FROM shopcity AS sc 
+				`SELECT COUNT(DISTINCT(s.shopid)) AS total FROM shopcity AS sc 
 				JOIN shop AS s ON s.shopid = sc.ShopId JOIN city AS c ON c.cityid = sc.cityid 
 				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
 				LEFT JOIN dish AS d ON d.dishid = sd.dishid
@@ -148,7 +154,7 @@ const ShopService: {
 			),
 			connection.query<RowDataPacket[]>(
 				`SELECT 
-					s.*, 
+					DISTINCT s.*, 
 					c.CityName, 
 					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
