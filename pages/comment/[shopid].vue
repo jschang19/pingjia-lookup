@@ -1,5 +1,4 @@
 <script setup lang="ts">
-interface comment {
 interface Comment {
 	id: string;
 	content: string;
@@ -40,11 +39,9 @@ type RatingCountKeys = keyof ShopInfo["ratingCounts"];
 const shopId = useRoute().params.shopid;
 const page = ref(1);
 const total = ref(0);
-const comments = ref<comment[]>([]);
 const comments = ref<Comment[]>([]);
 const shopInfo = ref<ShopInfo>();
 const pageSize = 4;
-const order = ref<"latest" | "score" | "score_asc">("latest");
 const sortOption = [
 	{
 		label: "日期",
@@ -61,44 +58,70 @@ const sortOption = [
 ];
 const selectedSortOption = ref(sortOption[0]);
 
+interface FetchCommentsParams {
+	shopId: string | string[];
+	current: number;
+	pageSize: number;
+	orderBy: string; // Assuming orderBy is optional
+}
+
 const handleLoadMore = async () => {
 	page.value += 1;
 	await fecthLoadMore(page.value);
 };
 
+interface CommentResponse {
+	total: number;
+	comments: Comment[]; // Replace 'Comment' with the actual type of your comments
+}
+
+const commentService = {
+	async fetchComments({ shopId, current, pageSize, orderBy }: FetchCommentsParams): Promise<CommentResponse> {
+		const { data } = await useFetch<CommentResponse>(`/api/comment/${shopId}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				current,
+				pageSize,
+				orderBy,
+			}),
+		});
+		return data.value!;
+	},
+};
+
+const fecthNewSort = async (page: number) => {
+	const data = await commentService.fetchComments({
+		shopId,
+		current: 0,
+		pageSize: page * pageSize,
+		orderBy: selectedSortOption.value.value,
+	});
+
+	comments.value = data.comments;
+};
+
 const fecthLoadMore = async (page: number) => {
-	const { data } = await useFetch<{
-		total: number;
-		comments: comment[];
-	}>(`/api/comment/${shopId}`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			current: (page - 1) * pageSize,
-			pageSize: pageSize,
-		}),
+	const data = await commentService.fetchComments({
+		shopId,
+		current: (page - 1) * pageSize,
+		pageSize,
+		orderBy: selectedSortOption.value.value,
 	});
 
 	// set comments
-	data.value!.comments.forEach((comment) => {
+	data.comments.forEach((comment) => {
 		comments.value.push(comment);
 	});
 };
 
-const { data: apicomments, error } = await useFetch<{
-	total: number;
-	comments: comment[];
-}>(`/api/comment/${shopId}`, {
-	method: "POST",
-	headers: {
-		"Content-Type": "application/json",
-	},
-	body: JSON.stringify({
-		current: (page.value - 1) * pageSize,
-		pageSize: pageSize,
-	}),
+const apicomments = await commentService.fetchComments({
+	shopId,
+	current: 0,
+	pageSize: page.value * pageSize,
+	orderBy: selectedSortOption.value.value,
 });
 
 const { data: ShopInfo } = await useFetch<{
@@ -138,9 +161,9 @@ const sortCommentsByLowRating = () => {
 };
 
 watchEffect(() => {
-	if (apicomments.value) {
-		comments.value = apicomments.value.comments;
-		total.value = apicomments.value.total;
+	if (apicomments) {
+		comments.value = apicomments.comments;
+		total.value = apicomments.total;
 	}
 });
 
