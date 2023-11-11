@@ -34,19 +34,26 @@ const ShopService: {
 		const likeTerm = `%${name}%`;
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				"SELECT COUNT(*) AS total FROM shop AS s JOIN shopcity AS sc ON s.shopid = sc.shopid JOIN city AS c ON c.cityid = sc.cityid  WHERE `ShopName` LIKE ?",
-				[likeTerm],
+				`SELECT COUNT(*) AS total FROM shop AS s 
+				JOIN shopcity AS sc ON s.shopid = sc.shopid
+				JOIN city AS c ON c.cityid = sc.cityid 
+				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
+				LEFT JOIN dish AS d ON d.dishid = sd.dishid
+				WHERE (shopname LIKE ? OR dishname LIKE ?)`,
+				[likeTerm, likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
-				`SELECT s.*, c.CityName, COALESCE(commentData.actualCommentCount, 0) as actualCommentCount,
+				`SELECT s.*, c.CityName, COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 				COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 				COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
 				COALESCE(avgScore.AvgService, 0) as AvgService
 				FROM shop as s
+				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
+				LEFT JOIN dish AS d ON d.dishid = sd.dishid
 				LEFT JOIN shopcity AS sc ON s.shopid = sc.shopid
 				LEFT JOIN city AS c ON c.cityid = sc.cityid
 				LEFT JOIN (
-						SELECT shopid, COUNT(commentid) as actualCommentCount
+						SELECT shopid, COUNT(commentid) as ActualCommentCount
 						FROM shopcomment
 						GROUP BY shopid
 				) AS commentData ON s.shopid = commentData.shopid
@@ -60,11 +67,11 @@ const ShopService: {
 								FROM shopcomment
 								GROUP BY shopid
 						) AS avgScore ON avgScore.shopid = s.shopid
-				WHERE s.shopname like ?
-				ORDER BY s.shopid
+				WHERE  s.shopname like ? OR d.dishname like ?
+				GROUP BY s.shopid
 				LIMIT ?, ?;
 				`,
-				[likeTerm, offset, pageSize],
+				[likeTerm, likeTerm, offset, pageSize],
 			),
 		]);
 		const totalRows = total[0].total;
@@ -79,23 +86,28 @@ const ShopService: {
 		const connection = await initConnection();
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				"SELECT COUNT(*) AS total FROM shopcity AS sc JOIN shop AS s ON s.shopid = sc.ShopId JOIN city AS c ON c.cityid = sc.cityid WHERE sc.CityID = ?",
+				`SELECT COUNT(*) AS total FROM shopcity AS sc 
+						JOIN shop AS s ON s.shopid = sc.ShopId 
+						JOIN city AS c ON c.cityid = sc.cityid 
+						WHERE sc.CityID = ?`,
 				[city],
 			),
 			connection.query<RowDataPacket[]>(
 				`SELECT s.*, c.CityName,
-					COALESCE(commentData.actualCommentCount, 0) as actualCommentCount,
+					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
 					COALESCE(avgScore.AvgService, 0) as AvgService
 				FROM shop AS s
 				LEFT JOIN (
-						SELECT shopid, COUNT(commentid) as actualCommentCount
+						SELECT shopid, COUNT(commentid) as ActualCommentCount
 						FROM shopcomment
 						GROUP BY shopid
 				) AS commentData ON s.shopid = commentData.shopid
-				JOIN shopcity AS sc ON s.shopid = sc.ShopId
-				JOIN city AS c ON c.cityid = sc.cityid
+				JOIN
+						shopcity AS sc ON s.shopid = sc.ShopId
+				JOIN
+						city AS c ON c.cityid = sc.cityid
 				LEFT JOIN 
 						(
 								SELECT 
@@ -128,44 +140,52 @@ const ShopService: {
 		// promise all
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				"SELECT COUNT(*) AS total FROM shopcity AS sc JOIN shop AS s ON s.shopid = sc.ShopId JOIN city AS c ON c.cityid = sc.cityid WHERE sc.CityID = ? AND s.ShopName LIKE ?",
-				[city, likeTerm],
+				`SELECT COUNT(*) AS total FROM shopcity AS sc 
+				JOIN shop AS s ON s.shopid = sc.ShopId JOIN city AS c ON c.cityid = sc.cityid 
+				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
+				LEFT JOIN dish AS d ON d.dishid = sd.dishid
+				WHERE sc.CityID = ? AND (s.ShopName LIKE ? OR d.DishName LIKE ?);`,
+				[city, likeTerm, likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
 				`SELECT 
-				s.*, 
-				c.CityName, 
-				COALESCE(commentData.actualCommentCount, 0) as actualCommentCount,
-				COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
-				COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
-				COALESCE(avgScore.AvgService, 0) as AvgService
-				FROM 
-					shopcity AS sc 
-				JOIN 
-					shop AS s ON s.shopid = sc.ShopId 
-				JOIN 
-					city AS c ON c.cityid = sc.cityid 
-				LEFT JOIN 
-					(
-							SELECT shopid, COUNT(commentid) as actualCommentCount
-							FROM shopcomment
-							GROUP BY shopid
-					) AS commentData ON s.shopid = commentData.shopid
-				LEFT JOIN 
+					s.*, 
+					c.CityName, 
+					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
+					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
+					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
+					COALESCE(avgScore.AvgService, 0) as AvgService
+					FROM 
+							shopcity AS sc 
+					JOIN 
+							shop AS s ON s.shopid = sc.ShopId 
+					JOIN 
+							city AS c ON c.cityid = sc.cityid
+					LEFT JOIN 
+							shopdish AS sd ON s.shopid = sd.shopid
+					LEFT JOIN 
+							dish AS d ON d.dishid = sd.dishid
+					LEFT JOIN 
 						(
-								SELECT 
-										AVG(CommentTaste) AS AvgTaste, 
-										AVG(CommentEnvironment) AS AvgEnvironment, 
-										AVG(CommentService) AS AvgService, 
-										shopid
+								SELECT shopid, COUNT(commentid) as ActualCommentCount
 								FROM shopcomment
 								GROUP BY shopid
-						) AS avgScore ON avgScore.shopid = s.shopid
-				WHERE 
-						sc.CityID = ? AND s.ShopName LIKE ? 
-				LIMIT ?, ?
+						) AS commentData ON s.shopid = commentData.shopid
+					LEFT JOIN 
+							(
+									SELECT 
+											AVG(CommentTaste) AS AvgTaste, 
+											AVG(CommentEnvironment) AS AvgEnvironment, 
+											AVG(CommentService) AS AvgService, 
+											shopid
+									FROM shopcomment
+									GROUP BY shopid
+							) AS avgScore ON avgScore.shopid = s.shopid
+					WHERE 
+							sc.CityID = ? AND ( s.ShopName LIKE ? OR d.DishName LIKE ? )
+					LIMIT ?, ?
 		`,
-				[city, likeTerm, offset, pageSize],
+				[city, likeTerm, likeTerm, offset, pageSize],
 			),
 		]);
 		await connection.end();
@@ -181,14 +201,20 @@ const ShopService: {
 			`SELECT 
 						s.*, 
 						c.CityName,
-						avgScore.*,
-						ratingCounts.*
+						AvgScore.*,
+						RatingCounts.*,
+						COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
+						GROUP_CONCAT(d.DishName SEPARATOR ', ') AS DishNames
 				FROM 
 						shop AS s 
 				JOIN 
 						shopcity AS sc ON s.shopid = sc.shopid
 				JOIN 
 						city AS c ON c.cityid = sc.cityid
+				LEFT JOIN
+						shopdish AS sd ON sd.shopid = s.shopid
+				LEFT JOIN
+						dish AS d ON d.dishid = sd.dishid
 				LEFT JOIN 
 						(
 								SELECT 
@@ -212,8 +238,15 @@ const ShopService: {
 								FROM shopcomment
 								GROUP BY shopid
 						) AS ratingCounts ON ratingCounts.shopid = s.shopid
+				LEFT JOIN 
+						(
+								SELECT shopid, COUNT(commentid) as ActualCommentCount
+								FROM shopcomment
+								GROUP BY shopid
+						) AS commentData ON s.shopid = commentData.shopid
 				WHERE 
 						s.shopid = ? 
+				GROUP BY s.shopid
 				LIMIT 1	
 				`,
 			[id],

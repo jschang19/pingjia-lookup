@@ -7,9 +7,9 @@ export function parseShopResults(rows: any[]) {
 			branch: row.ShopBranch,
 			city: row.CityID,
 			cityName: row.CityName,
-			commentCount: row.actualCommentCount,
+			commentCount: row.ActualCommentCount,
 			averagePrice: row.AvgPrice || "--",
-			averageScore,
+			averageScore: averageScore || 0,
 			ratingCounts: {
 				0: Number(row.RatingCount0) || 0,
 				1: Number(row.RatingCount1) || 0,
@@ -19,6 +19,7 @@ export function parseShopResults(rows: any[]) {
 				5: Number(row.RatingCount5) || 0,
 			},
 			address: row.ShopAddress || "無資料",
+			dishTypes: row.DishNames ? row.DishNames.split(", ").slice(0, 3) : [],
 		};
 	});
 }

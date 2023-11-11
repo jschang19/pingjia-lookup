@@ -19,10 +19,10 @@ const CommentService: CommentService = {
 
 		switch (orderBy) {
 			case "score":
-				orderBy = "(CommentTaste + CommentEnvironment + CommentService) DESC";
+				orderBy = "(CommentTaste + CommentEnvironment + CommentService) DESC, CommentDate DESC";
 				break;
 			case "score_asc":
-				orderBy = "(CommentTaste + CommentEnvironment + CommentService) ASC";
+				orderBy = "(CommentTaste + CommentEnvironment + CommentService) ASC, CommentDate DESC";
 				break;
 			case "latest":
 				orderBy = "CommentDate DESC";
