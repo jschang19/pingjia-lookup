@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { useSearchStore } from "~/stores/search";
+definePageMeta({
+	title: "評呷名",
+	keepalive: true,
+});
+
+const searchStore = useSearchStore();
 const page = ref(1);
 const total = ref(0);
 const toast = useToast();
@@ -21,11 +28,6 @@ interface Response {
 	shops: ShopInfo[];
 	total: number;
 }
-
-const searchData = reactive({
-	city: "",
-	name: "",
-});
 
 const cityOptions = ref<
 	{
@@ -57,7 +59,7 @@ const orderOptions = ref<
 const shops = ref<ShopInfo[]>([]);
 
 const handleSearch = async () => {
-	if (!searchData.city && !searchData.name) {
+	if (!searchStore.searchData.city && !searchStore.searchData.name) {
 		toast.add({
 			id: "search_input_required",
 			title: "請至少輸入一個搜尋條件",
@@ -73,7 +75,7 @@ const handleSearch = async () => {
 		const { data: apiShops } = await useFetch<Response>("/api/search", {
 			method: "POST",
 			body: JSON.stringify({
-				...searchData,
+				...searchStore.searchData,
 				current: 0,
 				pageSize: 10,
 			}),
@@ -93,7 +95,7 @@ const handlePageChange = async (page: number) => {
 	const { data: apiShops, pending: shopPending } = await useFetch<Response>("/api/search", {
 		method: "POST",
 		body: JSON.stringify({
-			...searchData,
+			...searchStore.searchData,
 			current: (page - 1) * 10,
 			pageSize: 10,
 		}),
@@ -103,8 +105,8 @@ const handlePageChange = async (page: number) => {
 };
 
 const handleReset = () => {
-	searchData.city = "";
-	searchData.name = "";
+	searchStore.searchData.city = "";
+	searchStore.searchData.name = "";
 };
 
 const { data: apiCities } = await useFetch<
@@ -120,7 +122,7 @@ cityOptions.value = apiCities.value!.map((city) => ({
 }));
 
 const currentCity = computed(() => {
-	return cityOptions.value.find((city) => city.value === searchData.city);
+	return cityOptions.value.find((city) => city.value === searchStore.searchData.city);
 });
 
 const hasShop = computed(() => {
@@ -128,10 +130,10 @@ const hasShop = computed(() => {
 });
 
 watch(
-	() => searchData.city,
+	() => searchStore.searchData.city,
 	async () => {
-		if (searchData.name) {
-			searchData.name = "";
+		if (searchStore.searchData.name) {
+			searchStore.searchData.name = "";
 		}
 	},
 );
@@ -153,7 +155,7 @@ watch(
 		</div>
 		<div class="flex flex-col md:flex-row gap-3">
 			<USelectMenu
-				v-model="searchData.city"
+				v-model="searchStore.searchData.city"
 				:options="cityOptions"
 				value-attribute="value"
 				size="lg"
@@ -166,8 +168,14 @@ watch(
 				</template>
 			</USelectMenu>
 			<div class="flex row gap-3 grow">
-				<UInput placeholder="請輸入關鍵字" size="lg" class="grow" v-model="searchData.name" />
-				<UButton size="lg" color="black" @click="handleSearch" class="px-5">搜尋</UButton>
+				<UInput
+					:disabled="isLoading"
+					placeholder="請輸入餐廳名稱或分類"
+					size="lg"
+					class="grow"
+					v-model="searchStore.searchData.name"
+				/>
+				<UButton :disabled="isLoading" size="lg" color="black" @click="handleSearch" class="px-5">搜尋</UButton>
 			</div>
 		</div>
 		<div class="gap-4 my-4">
