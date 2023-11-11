@@ -148,15 +148,26 @@ watchEffect(() => {
 	}
 });
 
-watchEffect(() => {
-	if (selectedSortOption.value.value === "latest") {
-		sortCommentsByDate();
-	} else if (selectedSortOption.value.value === "score_asc") {
-		sortCommentsByLowRating();
-	} else {
-		sortCommentsByRating();
-	}
-});
+watch(
+	() => selectedSortOption.value,
+	async () => {
+		if (selectedSortOption.value) {
+			await fecthNewSort(page.value);
+			console.log("hi");
+			switch (selectedSortOption.value.value) {
+				case "latest":
+					sortCommentsByDate();
+					break;
+				case "score":
+					sortCommentsByRating();
+					break;
+				case "score_asc":
+					sortCommentsByLowRating();
+					break;
+			}
+		}
+	},
+);
 </script>
 
 <template>
