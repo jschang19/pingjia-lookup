@@ -163,55 +163,56 @@ watch(
 
 <template>
 	<div class="w-full my-[120px] mx-auto overflow-hidden">
-		<div class="flex flex-col gap-3">
-			<h1 class="text-2xl font-bold">
-				{{ shopInfo?.name }} <span>{{ shopInfo?.branch }}</span>
-			</h1>
-			<UButton to="/" class="max-w-max" color="white">返回</UButton>
+		<div class="flex flex-col gap-4 pb-6">
+			<div class="flex flex-col gap-2 pb-4">
+				<h1 class="text-2xl font-bold">
+					{{ shopInfo?.name }} <span>{{ shopInfo?.branch }}</span>
+				</h1>
+				<div class="flex gap-2">
+					<div class="flex items-center gap-1">
+						<UIcon name="i-heroicons-star-solid" class="text-yellow-400 text-md" />
+						<span>{{ shopInfo?.averageScore }}</span>
+						<span class="text-sm text-gray-400 dark:text-gray-700">( {{ shopInfo?.commentCount }} 則評論)</span>
+					</div>
+				</div>
+				<div class="flex gap-2">
+					<UBadge
+						:ui="{ rounded: 'rounded-full' }"
+						v-for="dishType in shopInfo?.dishTypes"
+						color="black"
+						variant="solid"
+						class="max-w-max"
+						>#{{ dishType }}</UBadge
+					>
+				</div>
+			</div>
 			<div class="flex flex-row">
 				<p class="text-xl font-medium">評論</p>
 			</div>
 			<div class="flex flex-row justify-stretch items-center">
 				<div class="flex flex-col gap-1 justify-center items-center w-1/2">
-					<p class="text-sm text-gray-400 dark:text-gray-400">{{ total }} 則評論</p>
-					<p class="text-4xl font-bold">{{ shopInfo?.averageScore }}</p>
-					<div class="flex">
-						<UIcon
-							v-for="star in Math.round(shopInfo?.averageScore!)"
-							:key="star"
-							name="i-heroicons-star-solid"
-							class="text-yellow-400 text-md"
-						/>
-						<UIcon
-							v-for="star in (5 - Math.round(shopInfo?.averageScore!))"
-							:key="star"
-							name="i-heroicons-star"
-							class="text-yellow-400 text-md"
-						/>
-					</div>
+					<CommentRatingOverview :averageScore="shopInfo?.averageScore!" :total="total" />
 				</div>
 				<div class="flex justify-center items-start w-2/5 md:w-1/4">
-					<div class="flex flex-col-reverse gap-1 w-full">
-						<div class="flex items-center gap-1" v-for="index in 5" :key="index">
-							<span class="text-xs text-gray-400 dark:text-gray-400">{{ index }}</span>
-							<UProgress :value="shopInfo?.ratingCounts[index as RatingCountKeys]" :max="total" />
-							<span class="text-xs text-gray-300 dark:text-gray-400">{{
-								shopInfo?.ratingCounts[index as RatingCountKeys]
-							}}</span>
-						</div>
-					</div>
+					<CommentBarChart :ratingCounts="shopInfo?.ratingCounts!" :total="total" />
 				</div>
 			</div>
 			<UDivider />
-			<div class="flex flex-col gap-3 my-4">
-				<div class="flex justify-end">
-					<USelectMenu size="sm" class="max-w-max min-w-[130px]" v-model="selectedSortOption" :options="sortOption" />
+			<div class="flex flex-col gap-2">
+				<div class="flex justify-end pb-2">
+					<USelectMenu
+						v-if="hasReiew"
+						size="sm"
+						class="max-w-max min-w-[125px]"
+						v-model="selectedSortOption"
+						:options="sortOption"
+					/>
 				</div>
-				<div v-if="hasReiew" class="flex flex-col gap-2">
+				<div v-if="hasReiew" class="flex flex-col gap-1">
 					<CommentCard v-for="comment in comments" :key="comment.id" :comment="comment" />
 					<UButton v-show="hasMore" class="justify-center" variant="ghost" @click="handleLoadMore">顯示更多</UButton>
 				</div>
-				<div v-else>目前沒有評論</div>
+				<div v-else class="text-sm text-center text-gray-500 dark:text-gray-500">目前沒有評論</div>
 			</div>
 		</div>
 		<div class="flex flex-col gap-2">
