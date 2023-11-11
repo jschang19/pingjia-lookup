@@ -58,6 +58,49 @@ const sortOptions = ref<
 const sortMethod = ref(sortOptions.value[0].value);
 const shops = ref<ShopInfo[]>([]);
 
+const shopApiService = {
+	async fetchComments({
+		city,
+		name,
+		current,
+		pageSize,
+		orderBy,
+	}: {
+		city: string;
+		name: string;
+		current: number;
+		pageSize: number;
+		orderBy: string;
+	}): Promise<Response> {
+		isLoading.value = true;
+		const { data, error } = await useFetch<Response>(`/api/search`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				city,
+				name,
+				current,
+				pageSize,
+				orderBy,
+			}),
+		});
+		if (error.value) {
+			toast.add({
+				id: "search_error",
+				title: "搜尋失敗",
+				description: "請稍後再試",
+				icon: "i-heroicons-information-circle",
+				color: "red",
+				timeout: 2000,
+			});
+		}
+		isLoading.value = false;
+		return data.value!;
+	},
+};
+
 const handleSearch = async () => {
 	if (!searchStore.inputSearchData.city && !searchStore.inputSearchData.name) {
 		toast.add({
@@ -68,7 +111,6 @@ const handleSearch = async () => {
 		});
 		return;
 	}
-
 	if (
 		searchStore.inputSearchData.name === searchStore.lastSearchData.name &&
 		searchStore.inputSearchData.city === searchStore.lastSearchData.city
@@ -76,65 +118,47 @@ const handleSearch = async () => {
 		return;
 	}
 	hasSearched.value = true;
-	isLoading.value = true;
 	try {
-		// post to api
-		const { data: apiShops } = await useFetch<Response>("/api/search", {
-			method: "POST",
-			body: JSON.stringify({
-				...searchStore.inputSearchData,
-				current: 0,
-				pageSize: 10,
-			}),
+		const data = await shopApiService.fetchComments({
+			...searchStore.inputSearchData,
+			current: 0,
+			pageSize: 10,
+			orderBy: sortMethod.value,
 		});
-		shops.value = apiShops.value!.shops || [];
-		total.value = apiShops.value!.total || 0;
+		shops.value = data.shops;
+		total.value = data.total;
 		searchStore.page = 1;
 		searchStore.setLastSearchData({
 			city: searchStore.inputSearchData.city,
 			name: searchStore.inputSearchData.name,
 		});
-		isLoading.value = false;
 	} catch (e) {
 		console.log(e);
-	} finally {
-		isLoading.value = false;
 	}
 };
 
 const handlePageChange = async (page: number) => {
-	const { data: apiShops, error } = await useFetch<Response>("/api/search", {
-		method: "POST",
-
-		body: JSON.stringify({
-			...searchStore.lastSearchData,
-			current: (page - 1) * 10,
-			pageSize: 10,
-			orderBy: sortMethod.value,
-		}),
+	const data = await shopApiService.fetchComments({
+		...searchStore.lastSearchData,
+		current: (page - 1) * 10,
+		pageSize: 10,
+		orderBy: sortMethod.value,
 	});
 
-	if (error.value) {
-		console.log(error);
-		return;
-	}
-
-	shops.value = apiShops.value!.shops || [];
-	total.value = apiShops.value!.total || 0;
+	shops.value = data.shops || [];
+	total.value = data.total || 0;
 };
 
 const handleSortChange = async (sortMethod: string) => {
-	const { data: apiShops } = await useFetch<Response>("/api/search", {
-		method: "POST",
-		body: JSON.stringify({
-			...searchStore.lastSearchData,
-			current: 0,
-			pageSize: 10,
-			orderBy: sortMethod,
-		}),
+	const data = await shopApiService.fetchComments({
+		...searchStore.lastSearchData,
+		current: 0,
+		pageSize: 10,
+		orderBy: sortMethod,
 	});
-	console.log(apiShops);
-	shops.value = apiShops.value!.shops || [];
+
+	shops.value = data.shops || [];
+	total.value = data.total || 0;
 };
 
 const handleReset = () => {
