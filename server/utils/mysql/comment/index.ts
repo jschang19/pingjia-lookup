@@ -19,10 +19,10 @@ const CommentService: CommentService = {
 
 		switch (orderBy) {
 			case "score":
-				orderBy = "CommentTaste DESC, CommentEnvironment DESC, CommentService DESC";
+				orderBy = "(CommentTaste + CommentEnvironment + CommentService) DESC";
 				break;
 			case "score_asc":
-				orderBy = "CommentTaste ASC, CommentEnvironment ASC, CommentService ASC";
+				orderBy = "(CommentTaste + CommentEnvironment + CommentService) ASC";
 				break;
 			case "latest":
 				orderBy = "CommentDate DESC";
@@ -34,11 +34,10 @@ const CommentService: CommentService = {
 
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>("SELECT COUNT(*) AS total FROM shopcomment WHERE ShopID = ?", [shopId]),
-			connection.query<RowDataPacket[]>(`SELECT * FROM shopcomment WHERE ShopID = ? ORDER BY ${orderBy} LIMIT ?, ?`, [
-				shopId,
-				offset,
-				pageSize,
-			]),
+			connection.query<RowDataPacket[]>(
+				`SELECT * FROM shopcomment as scm WHERE ShopID = ? ORDER BY ${orderBy} LIMIT ?, ?`,
+				[shopId, offset, pageSize],
+			),
 		]);
 		const totalRows = total[0].total;
 		return {
