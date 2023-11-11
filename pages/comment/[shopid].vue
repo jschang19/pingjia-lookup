@@ -178,18 +178,6 @@ watch(
 	async () => {
 		if (selectedSortOption.value) {
 			await fecthNewSort(page.value);
-			console.log("hi");
-			switch (selectedSortOption.value.value) {
-				case "latest":
-					sortCommentsByDate();
-					break;
-				case "score":
-					sortCommentsByRating();
-					break;
-				case "score_asc":
-					sortCommentsByLowRating();
-					break;
-			}
 		}
 	},
 );
