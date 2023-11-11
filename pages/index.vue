@@ -36,7 +36,7 @@ const cityOptions = ref<
 	}[]
 >([]);
 
-const orderOptions = ref<
+const sortOptions = ref<
 	{
 		label: string;
 		value: string;
@@ -68,6 +68,13 @@ const handleSearch = async () => {
 		});
 		return;
 	}
+
+	if (
+		searchStore.searchData.name === searchStore.lastSearchData.name &&
+		searchStore.searchData.city === searchStore.lastSearchData.city
+	) {
+		return;
+	}
 	hasSearched.value = true;
 	isLoading.value = true;
 	try {
@@ -83,6 +90,10 @@ const handleSearch = async () => {
 		shops.value = apiShops.value!.shops || [];
 		total.value = apiShops.value!.total || 0;
 		page.value = 1;
+		searchStore.setLastSearchData({
+			city: searchStore.searchData.city,
+			name: searchStore.searchData.name,
+		});
 		isLoading.value = false;
 	} catch (e) {
 		console.log(e);
@@ -144,6 +155,13 @@ watch(
 		await handlePageChange(page.value);
 	},
 );
+
+onDeactivated(() => {
+	searchStore.setLastSearchData({
+		city: "",
+		name: "",
+	});
+});
 </script>
 <template>
 	<div class="w-full my-[120px] mx-auto">
@@ -153,37 +171,39 @@ watch(
 				Find something good to eat 😋
 			</h2>
 		</div>
-		<div class="flex flex-col md:flex-row gap-3">
-			<USelectMenu
-				v-model="searchStore.searchData.city"
-				:options="cityOptions"
-				value-attribute="value"
-				size="lg"
-				class="max-md:max-w-full max-md:grow min-w-[125px]"
-				searchable
-				searchable-placeholder="請輸入城市"
-			>
-				<template #label>
-					{{ currentCity?.label || "請選擇城市" }}
-				</template>
-			</USelectMenu>
-			<div class="flex row gap-3 grow">
-				<UInput
-					:disabled="isLoading"
-					placeholder="請輸入餐廳名稱或分類"
+		<div>
+			<UForm :state="searchStore.searchData" class="flex flex-col md:flex-row gap-3" @submit="handleSearch">
+				<USelectMenu
+					v-model="searchStore.searchData.city"
+					:options="cityOptions"
+					value-attribute="value"
 					size="lg"
-					class="grow"
-					v-model="searchStore.searchData.name"
-				/>
-				<UButton :disabled="isLoading" size="lg" color="black" @click="handleSearch" class="px-5">搜尋</UButton>
-			</div>
+					class="max-md:max-w-full max-md:grow min-w-[125px]"
+					searchable
+					searchable-placeholder="請輸入城市"
+				>
+					<template #label>
+						{{ currentCity?.label || "請選擇城市" }}
+					</template>
+				</USelectMenu>
+				<div class="flex row gap-3 grow">
+					<UInput
+						:disabled="isLoading"
+						placeholder="請輸入餐廳名稱或分類"
+						size="lg"
+						class="grow"
+						v-model="searchStore.searchData.name"
+					/>
+					<UButton :disabled="isLoading" size="lg" color="black" type="submit" class="px-5">搜尋</UButton>
+				</div>
+			</UForm>
 		</div>
 		<div class="gap-4 my-4">
 			<div v-if="hasShop" class="flex flex-col gap-3">
 				<UDivider />
 				<h2 class="text-lg font-semibold">{{ total }} 筆餐廳結果</h2>
 				<ShopResult v-for="shop in shops" :key="shop.id" :shop="shop" />
-				<UPagination v-if="hasShop" v-model="page" :page-count="10" :total="total" />
+				<UPagination v-if="hasShop && shops.length > 10" v-model="page" :page-count="10" :total="total" />
 			</div>
 			<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
 				沒有符合條件的餐廳

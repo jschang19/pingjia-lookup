@@ -7,5 +7,14 @@ export const useSearchStore = defineStore("search", {
 			city: "",
 			name: "",
 		},
+		lastSearchData: {
+			city: "",
+			name: "",
+		},
 	}),
+	actions: {
+		setLastSearchData(data: { city: string; name: string }) {
+			this.lastSearchData = data;
+		},
+	},
 });
