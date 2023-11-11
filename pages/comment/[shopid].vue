@@ -1,5 +1,6 @@
 <script setup lang="ts">
 interface comment {
+interface Comment {
 	id: string;
 	content: string;
 	author: string;
@@ -40,6 +41,7 @@ const shopId = useRoute().params.shopid;
 const page = ref(1);
 const total = ref(0);
 const comments = ref<comment[]>([]);
+const comments = ref<Comment[]>([]);
 const shopInfo = ref<ShopInfo>();
 const pageSize = 4;
 const order = ref<"latest" | "score" | "score_asc">("latest");
