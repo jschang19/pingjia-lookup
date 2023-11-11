@@ -24,6 +24,7 @@ interface ShopInfo {
 	cityName: string;
 	rating: string;
 	address: string;
+	dishTypes: string[];
 	ratingCounts: {
 		0: number;
 		1: number;
@@ -117,7 +118,7 @@ const fecthLoadMore = async (page: number) => {
 	});
 };
 
-const apicomments = await commentService.fetchComments({
+const initialComments = await commentService.fetchComments({
 	shopId,
 	current: 0,
 	pageSize: page.value * pageSize,
@@ -133,37 +134,14 @@ const { data: ShopInfo } = await useFetch<{
 	},
 });
 
+
 const hasReiew = computed(() => comments.value.length > 0);
 const hasMore = computed(() => comments.value.length < total.value);
 
-const sortCommentsByDate = () => {
-	const tmp = comments.value;
-	tmp.sort((a, b) => {
-		return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-	});
-	comments.value = tmp;
-};
-
-const sortCommentsByRating = () => {
-	const tmp = comments.value;
-	tmp.sort((a, b) => {
-		return b.scores.average - a.scores.average;
-	});
-	comments.value = tmp;
-};
-
-const sortCommentsByLowRating = () => {
-	const tmp = comments.value;
-	tmp.sort((a, b) => {
-		return a.scores.average - b.scores.average;
-	});
-	comments.value = tmp;
-};
-
 watchEffect(() => {
-	if (apicomments) {
-		comments.value = apicomments.comments;
-		total.value = apicomments.total;
+	if (initialComments) {
+		comments.value = initialComments.comments;
+		total.value = initialComments.total;
 	}
 });
 
