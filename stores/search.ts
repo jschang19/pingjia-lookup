@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 
 export const useSearchStore = defineStore("search", {
 	state: () => ({
-		searchData: {
+		inputSearchData: {
 			city: "",
 			name: "",
 		},
@@ -11,6 +11,7 @@ export const useSearchStore = defineStore("search", {
 			city: "",
 			name: "",
 		},
+		page: 1,
 	}),
 	actions: {
 		setLastSearchData(data: { city: string; name: string }) {

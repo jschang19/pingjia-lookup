@@ -6,6 +6,7 @@ const ShopService: {
 		name: string,
 		offset: number,
 		pageSize: number,
+		orderBy: string,
 	) => Promise<{
 		total: number;
 		rows: RowDataPacket[];
@@ -14,6 +15,7 @@ const ShopService: {
 		city: string,
 		offset: number,
 		pageSize: number,
+		orderBy: string,
 	) => Promise<{
 		total: number;
 		rows: RowDataPacket[];
@@ -23,15 +25,18 @@ const ShopService: {
 		name: string,
 		offset: number,
 		pageSize: number,
+		orderBy: string,
 	) => Promise<{
 		total: number;
 		rows: RowDataPacket[];
 	}>;
 	getById: (id: string) => Promise<RowDataPacket[]>;
 } = {
-	getByName: async (name: string, offset: number, pageSize: number) => {
+	getByName: async (name: string, offset: number, pageSize: number, orderBy: string) => {
 		const connection = await initConnection();
 		const likeTerm = `%${name}%`;
+		orderBy = getOrderBy(orderBy);
+
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
 				`SELECT COUNT(DISTINCT(s.shopid)) AS total FROM shop AS s 
@@ -46,7 +51,8 @@ const ShopService: {
 				`SELECT DISTINCT s.*, c.CityName, COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 				COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 				COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
-				COALESCE(avgScore.AvgService, 0) as AvgService
+				COALESCE(avgScore.AvgService, 0) as AvgService,
+				COALESCE(avgScore.AvgPrice, 0) asAvgPrice
 				FROM shop as s
 				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
 				LEFT JOIN dish AS d ON d.dishid = sd.dishid
@@ -63,11 +69,13 @@ const ShopService: {
 										AVG(CommentTaste) AS AvgTaste, 
 										AVG(CommentEnvironment) AS AvgEnvironment, 
 										AVG(CommentService) AS AvgService, 
+										AVG(AvgPrice) AS AvgPrice,
 										shopid
 								FROM shopcomment
 								GROUP BY shopid
 						) AS avgScore ON avgScore.shopid = s.shopid
 				WHERE  s.shopname like ? OR d.dishname like ?
+				ORDER BY ${orderBy}
 				LIMIT ?, ?;
 				`,
 				[likeTerm, likeTerm, offset, pageSize],
@@ -81,7 +89,8 @@ const ShopService: {
 		};
 	},
 
-	getByCity: async (city: string, offset: number, pageSize: number) => {
+	getByCity: async (city: string, offset: number, pageSize: number, orderBy: string) => {
+		orderBy = getOrderBy(orderBy);
 		const connection = await initConnection();
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
@@ -124,7 +133,7 @@ const ShopService: {
 								GROUP BY shopid
 						) AS avgScore ON avgScore.shopid = s.shopid
 				WHERE sc.CityID = ?
-				ORDER BY s.shopid
+				ORDER BY ${orderBy}
 				LIMIT ?, ?;`,
 				[city, offset, pageSize],
 			),
@@ -138,10 +147,10 @@ const ShopService: {
 		};
 	},
 
-	getByCityAndName: async (city: string, name: string, offset: number, pageSize: number) => {
+	getByCityAndName: async (city: string, name: string, offset: number, pageSize: number, orderBy: string) => {
 		const connection = await initConnection();
 		const likeTerm = `%${name}%`;
-
+		orderBy = getOrderBy(orderBy);
 		// promise all
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
@@ -188,6 +197,7 @@ const ShopService: {
 							) AS avgScore ON avgScore.shopid = s.shopid
 					WHERE 
 							sc.CityID = ? AND ( s.ShopName LIKE ? OR d.DishName LIKE ? )
+					ORDER BY ${orderBy}
 					LIMIT ?, ?
 		`,
 				[city, likeTerm, likeTerm, offset, pageSize],
@@ -261,3 +271,21 @@ const ShopService: {
 };
 
 export default ShopService;
+
+const getOrderBy = (orderBy: string) => {
+	switch (orderBy) {
+		case "rating":
+			orderBy = "(AvgTaste + AvgEnvironment + AvgService) DESC";
+			break;
+		case "price_asc":
+			orderBy = "AvgPrice ASC";
+			break;
+		case "price_desc":
+			orderBy = "AvgPrice DESC";
+			break;
+		default:
+			orderBy = "(AvgTaste + AvgEnvironment + AvgService) DESC";
+			break;
+	}
+	return orderBy;
+};

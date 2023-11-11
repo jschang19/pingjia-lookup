@@ -6,7 +6,6 @@ definePageMeta({
 });
 
 const searchStore = useSearchStore();
-const page = ref(1);
 const total = ref(0);
 const toast = useToast();
 const hasSearched = ref(false);
@@ -44,22 +43,23 @@ const sortOptions = ref<
 >([
 	{
 		label: "評價最高",
-		value: "rating_desc",
-	},
-	{
-		label: "價格最高",
-		value: "averagePrice_desc",
+		value: "rating",
 	},
 	{
 		label: "價格最低",
-		value: "averagePrice_asc",
+		value: "price_asc",
+	},
+	{
+		label: "價格最高",
+		value: "price_desc",
 	},
 ]);
 
+const sortMethod = ref(sortOptions.value[0].value);
 const shops = ref<ShopInfo[]>([]);
 
 const handleSearch = async () => {
-	if (!searchStore.searchData.city && !searchStore.searchData.name) {
+	if (!searchStore.inputSearchData.city && !searchStore.inputSearchData.name) {
 		toast.add({
 			id: "search_input_required",
 			title: "請至少輸入一個搜尋條件",
@@ -70,8 +70,8 @@ const handleSearch = async () => {
 	}
 
 	if (
-		searchStore.searchData.name === searchStore.lastSearchData.name &&
-		searchStore.searchData.city === searchStore.lastSearchData.city
+		searchStore.inputSearchData.name === searchStore.lastSearchData.name &&
+		searchStore.inputSearchData.city === searchStore.lastSearchData.city
 	) {
 		return;
 	}
@@ -82,17 +82,17 @@ const handleSearch = async () => {
 		const { data: apiShops } = await useFetch<Response>("/api/search", {
 			method: "POST",
 			body: JSON.stringify({
-				...searchStore.searchData,
+				...searchStore.inputSearchData,
 				current: 0,
 				pageSize: 10,
 			}),
 		});
 		shops.value = apiShops.value!.shops || [];
 		total.value = apiShops.value!.total || 0;
-		page.value = 1;
+		searchStore.page = 1;
 		searchStore.setLastSearchData({
-			city: searchStore.searchData.city,
-			name: searchStore.searchData.name,
+			city: searchStore.inputSearchData.city,
+			name: searchStore.inputSearchData.name,
 		});
 		isLoading.value = false;
 	} catch (e) {
@@ -103,21 +103,43 @@ const handleSearch = async () => {
 };
 
 const handlePageChange = async (page: number) => {
-	const { data: apiShops, pending: shopPending } = await useFetch<Response>("/api/search", {
+	const { data: apiShops, error } = await useFetch<Response>("/api/search", {
 		method: "POST",
+
 		body: JSON.stringify({
-			...searchStore.searchData,
+			...searchStore.lastSearchData,
 			current: (page - 1) * 10,
 			pageSize: 10,
+			orderBy: sortMethod.value,
 		}),
 	});
+
+	if (error.value) {
+		console.log(error);
+		return;
+	}
+
 	shops.value = apiShops.value!.shops || [];
 	total.value = apiShops.value!.total || 0;
 };
 
+const handleSortChange = async (sortMethod: string) => {
+	const { data: apiShops } = await useFetch<Response>("/api/search", {
+		method: "POST",
+		body: JSON.stringify({
+			...searchStore.lastSearchData,
+			current: 0,
+			pageSize: 10,
+			orderBy: sortMethod,
+		}),
+	});
+	console.log(apiShops);
+	shops.value = apiShops.value!.shops || [];
+};
+
 const handleReset = () => {
-	searchStore.searchData.city = "";
-	searchStore.searchData.name = "";
+	searchStore.inputSearchData.city = "";
+	searchStore.inputSearchData.name = "";
 };
 
 const { data: apiCities } = await useFetch<
@@ -133,7 +155,7 @@ cityOptions.value = apiCities.value!.map((city) => ({
 }));
 
 const currentCity = computed(() => {
-	return cityOptions.value.find((city) => city.value === searchStore.searchData.city);
+	return cityOptions.value.find((city) => city.value === searchStore.inputSearchData.city);
 });
 
 const hasShop = computed(() => {
@@ -141,18 +163,26 @@ const hasShop = computed(() => {
 });
 
 watch(
-	() => searchStore.searchData.city,
+	() => searchStore.inputSearchData.city,
 	async () => {
-		if (searchStore.searchData.name) {
-			searchStore.searchData.name = "";
+		if (searchStore.inputSearchData.name) {
+			searchStore.inputSearchData.name = "";
 		}
 	},
 );
 
 watch(
-	() => page.value,
+	() => searchStore.page,
 	async () => {
-		await handlePageChange(page.value);
+		await handlePageChange(searchStore.page);
+	},
+);
+
+watch(
+	() => sortMethod.value,
+	async () => {
+		searchStore.page = 1;
+		await handleSortChange(sortMethod.value);
 	},
 );
 
@@ -172,9 +202,9 @@ onDeactivated(() => {
 			</h2>
 		</div>
 		<div>
-			<UForm :state="searchStore.searchData" class="flex flex-col md:flex-row gap-3" @submit="handleSearch">
+			<UForm :state="searchStore.inputSearchData" class="flex flex-col md:flex-row gap-3" @submit="handleSearch">
 				<USelectMenu
-					v-model="searchStore.searchData.city"
+					v-model="searchStore.inputSearchData.city"
 					:options="cityOptions"
 					value-attribute="value"
 					size="lg"
@@ -192,23 +222,28 @@ onDeactivated(() => {
 						placeholder="請輸入餐廳名稱或分類"
 						size="lg"
 						class="grow"
-						v-model="searchStore.searchData.name"
+						v-model="searchStore.inputSearchData.name"
 					/>
 					<UButton :disabled="isLoading" size="lg" color="black" type="submit" class="px-5">搜尋</UButton>
 				</div>
 			</UForm>
+			<div class="flex justify-start md:justify-end mt-3">
+				<UButton size="xs" color="gray" @click="handleReset" variant="ghost">清除條件</UButton>
+			</div>
 		</div>
 		<div class="gap-4 my-4">
 			<div v-if="hasShop" class="flex flex-col gap-3">
 				<UDivider />
-				<h2 class="text-lg font-semibold">{{ total }} 筆餐廳結果</h2>
+				<div class="flex flex-row justify-end gap-2">
+					<USelect size="sm" v-model="sortMethod" :options="sortOptions" />
+				</div>
 				<ShopResult v-for="shop in shops" :key="shop.id" :shop="shop" />
-				<UPagination v-if="hasShop && shops.length > 10" v-model="page" :page-count="10" :total="total" />
+				<UPagination v-if="hasShop && total > 10" v-model="searchStore.page" :page-count="10" :total="total" />
 			</div>
 			<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
 				沒有符合條件的餐廳
 			</div>
-			<div v-else-if="isLoading" class="text-sm text-gray-500 dark:text-gray-600 text-center mt-10">稍等一下</div>
+			<div v-else-if="isLoading" class="text-sm text-gray-500 dark:text-gray-600 text-center mt-10">稍等一下..</div>
 		</div>
 	</div>
 </template>

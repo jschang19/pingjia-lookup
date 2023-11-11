@@ -7,7 +7,7 @@ export default eventHandler(async (event) => {
 		// get post data
 		const data = await readBody(event);
 
-		const { name: searchName, city: searchCity, current, pageSize } = data;
+		const { name: searchName, city: searchCity, current, pageSize, orderBy } = data;
 
 		if (!data.name && !data.city) {
 			setResponseStatus(event, 400);
@@ -33,11 +33,11 @@ export default eventHandler(async (event) => {
 		const simplifySearchName = traditionToSimple(searchName);
 
 		if (searchName && searchCity) {
-			results = await ShopService.getByCityAndName(searchCity, simplifySearchName, current, pageSize);
+			results = await ShopService.getByCityAndName(searchCity, simplifySearchName, current, pageSize, orderBy);
 		} else if (searchName) {
-			results = await ShopService.getByName(simplifySearchName, current, pageSize);
+			results = await ShopService.getByName(simplifySearchName, current, pageSize, orderBy);
 		} else {
-			results = await ShopService.getByCity(searchCity, current, pageSize);
+			results = await ShopService.getByCity(searchCity, current, pageSize, orderBy);
 		}
 		results.shops = parseShopResults(results.rows);
 
