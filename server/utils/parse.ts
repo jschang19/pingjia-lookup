@@ -8,7 +8,7 @@ export function parseShopResults(rows: any[]) {
 			city: row.CityID,
 			cityName: row.CityName,
 			commentCount: row.actualCommentCount,
-			averagePrice: row.AvgPrice || "無資料",
+			averagePrice: row.AvgPrice || "--",
 			averageScore,
 			ratingCounts: {
 				0: Number(row.RatingCount0) || 0,
