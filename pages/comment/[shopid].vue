@@ -142,45 +142,41 @@ watch(
 <template>
 	<div class="w-full my-[120px] mx-auto overflow-hidden">
 		<div v-if="hasShopInfo">
-			<ClientOnly>
-				<div class="flex flex-col gap-4 pb-6">
-					<CommentTopHeading :shopInfo="shopInfo!" />
-					<div class="flex flex-row">
-						<p class="text-xl font-medium">評論</p>
+			<div class="flex flex-col gap-4 pb-6">
+				<CommentTopHeading :shopInfo="shopInfo!" />
+				<div class="flex flex-row">
+					<p class="text-xl font-medium">評論</p>
+				</div>
+				<div class="flex flex-row justify-stretch items-center">
+					<div class="flex flex-col gap-1 justify-center items-center w-1/2">
+						<CommentRatingOverview :averageScore="shopInfo?.averageScore!" :total="total" />
 					</div>
-					<div class="flex flex-row justify-stretch items-center">
-						<div class="flex flex-col gap-1 justify-center items-center w-1/2">
-							<CommentRatingOverview :averageScore="shopInfo?.averageScore!" :total="total" />
-						</div>
-						<div class="flex justify-center items-start w-2/5 md:w-1/4">
-							<CommentBarChart :ratingCounts="shopInfo?.ratingCounts!" :total="total" />
-						</div>
-					</div>
-					<UDivider />
-					<div class="flex flex-col gap-2">
-						<div class="flex justify-end pb-2">
-							<USelectMenu
-								v-if="hasReiew"
-								size="sm"
-								class="max-w-max min-w-[125px]"
-								v-model="selectedSortOption"
-								:options="sortOption"
-							/>
-						</div>
-						<div v-if="hasReiew" class="flex flex-col gap-1">
-							<CommentCard v-for="comment in comments" :key="comment.id" :comment="comment" />
-							<UButton v-show="hasMore" class="justify-center" variant="ghost" @click="handleLoadMore"
-								>顯示更多</UButton
-							>
-						</div>
-						<div v-else class="text-sm text-center text-gray-500 dark:text-gray-500">目前沒有評論</div>
+					<div class="flex justify-center items-start w-2/5 md:w-1/4">
+						<CommentBarChart :ratingCounts="shopInfo?.ratingCounts!" :total="total" />
 					</div>
 				</div>
+				<UDivider />
 				<div class="flex flex-col gap-2">
-					<p class="text-xl font-medium">基本資訊</p>
-					<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
+					<div class="flex justify-end pb-2">
+						<USelectMenu
+							v-if="hasReiew"
+							size="sm"
+							class="max-w-max min-w-[125px]"
+							v-model="selectedSortOption"
+							:options="sortOption"
+						/>
+					</div>
+					<div v-if="hasReiew" class="flex flex-col gap-1">
+						<CommentCard v-for="comment in comments" :key="comment.id" :comment="comment" />
+						<UButton v-show="hasMore" class="justify-center" variant="ghost" @click="handleLoadMore">顯示更多</UButton>
+					</div>
+					<div v-else class="text-sm text-center text-gray-500 dark:text-gray-500">目前沒有評論</div>
 				</div>
-			</ClientOnly>
+			</div>
+			<div class="flex flex-col gap-2">
+				<p class="text-xl font-medium">基本資訊</p>
+				<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
+			</div>
 		</div>
 		<div v-else class="flex flex-col items-center gap-3">
 			<ClientOnly>
