@@ -1,5 +1,5 @@
 import ShopService from "@/server/utils/mysql/shop";
-import { parseShopResults } from "@/server/utils/parse";
+import { parseSingleShopResult } from "@/server/utils/parse";
 
 export default eventHandler(async (event) => {
 	const shopId = event.context.params!.shopid as string;
@@ -10,9 +10,9 @@ export default eventHandler(async (event) => {
 		return;
 	}
 
-	const results = await ShopService.getById(shopId);
+	const result = await ShopService.getById(shopId);
 
-	if (results[0].ShopID === null) {
+	if (result.info === null) {
 		setResponseStatus(event, 404);
 		await send(event, "Not Found");
 		return;
@@ -23,7 +23,7 @@ export default eventHandler(async (event) => {
 	await send(
 		event,
 		JSON.stringify({
-			shop: parseShopResults(results)[0],
+			shop: parseSingleShopResult(result),
 		}),
 	);
 	return;

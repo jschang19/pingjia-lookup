@@ -30,7 +30,13 @@ const ShopService: {
 		total: number;
 		rows: RowDataPacket[];
 	}>;
-	getById: (id: string) => Promise<RowDataPacket[]>;
+	getById: (id: string) => Promise<{
+		info: RowDataPacket[];
+		dishNames: RowDataPacket[];
+		avgScore: RowDataPacket[];
+		ratingCounts: RowDataPacket[];
+		commentCount: RowDataPacket[];
+	}>;
 } = {
 	getByName: async (name: string, offset: number, pageSize: number, orderBy: string) => {
 		const connection = await initConnection();
@@ -39,23 +45,28 @@ const ShopService: {
 
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				`SELECT COUNT(DISTINCT(s.shopid)) AS total FROM shop AS s 
-				JOIN shopcity AS sc ON s.shopid = sc.shopid
-				JOIN city AS c ON c.cityid = sc.cityid 
-				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
-				LEFT JOIN dish AS d ON d.dishid = sd.dishid
-				WHERE shopname LIKE ? OR dishname LIKE ?`,
-				[likeTerm, likeTerm],
+				`SELECT COUNT(DISTINCT(s.ShopID)) AS total 
+					FROM shop AS s 
+					JOIN 
+							shopcity AS sc ON s.shopid = sc.shopid
+					JOIN
+							city AS c ON c.cityid = sc.cityid 
+					WHERE
+							shopname LIKE ?;`,
+				[likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
-				`SELECT DISTINCT s.*, c.CityName, COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
+				`SELECT 
+				s.ShopID,
+				s.ShopName,
+				s.ShopBranch,
+				s.ShopAddress,
+				c.CityName, COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 				COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 				COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
 				COALESCE(avgScore.AvgService, 0) as AvgService,
-				COALESCE(avgScore.AvgPrice, 0) asAvgPrice
+				COALESCE(avgScore.AvgPrice, 0) as AvgPrice
 				FROM shop as s
-				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
-				LEFT JOIN dish AS d ON d.dishid = sd.dishid
 				LEFT JOIN shopcity AS sc ON s.shopid = sc.shopid
 				LEFT JOIN city AS c ON c.cityid = sc.cityid
 				LEFT JOIN (
@@ -74,11 +85,11 @@ const ShopService: {
 								FROM shopcomment
 								GROUP BY shopid
 						) AS avgScore ON avgScore.shopid = s.shopid
-				WHERE  s.shopname like ? OR d.dishname like ?
+				WHERE  s.shopname like ?
 				ORDER BY ${orderBy}
 				LIMIT ?, ?;
 				`,
-				[likeTerm, likeTerm, offset, pageSize],
+				[likeTerm, offset, pageSize],
 			),
 		]);
 		const totalRows = total[0].total;
@@ -163,7 +174,7 @@ const ShopService: {
 			),
 			connection.query<RowDataPacket[]>(
 				`SELECT 
-					DISTINCT s.*, 
+					s.*, 
 					c.CityName, 
 					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
@@ -175,10 +186,6 @@ const ShopService: {
 							shop AS s ON s.shopid = sc.ShopId 
 					JOIN 
 							city AS c ON c.cityid = sc.cityid
-					LEFT JOIN 
-							shopdish AS sd ON s.shopid = sd.shopid
-					LEFT JOIN 
-							dish AS d ON d.dishid = sd.dishid
 					LEFT JOIN 
 						(
 								SELECT shopid, COUNT(commentid) as ActualCommentCount
@@ -196,11 +203,11 @@ const ShopService: {
 									GROUP BY shopid
 							) AS avgScore ON avgScore.shopid = s.shopid
 					WHERE 
-							sc.CityID = ? AND ( s.ShopName LIKE ? OR d.DishName LIKE ? )
+							sc.CityID = ? AND s.ShopName LIKE ? 
 					ORDER BY ${orderBy}
 					LIMIT ?, ?
 		`,
-				[city, likeTerm, likeTerm, offset, pageSize],
+				[city, likeTerm, offset, pageSize],
 			),
 		]);
 		await connection.end();
@@ -212,61 +219,93 @@ const ShopService: {
 
 	getById: async (id: string) => {
 		const connection = await initConnection();
-		const [rows] = await connection.query<RowDataPacket[]>(
-			`SELECT 
-						s.*, 
-						c.CityName,
-						AvgScore.*,
-						RatingCounts.*,
-						COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
-						GROUP_CONCAT(d.DishName SEPARATOR ', ') AS DishNames
+		const [[info], [dishNames], [avgScore], [ratingCounts], [commentCount]] = await Promise.all([
+			connection.query<RowDataPacket[]>(
+				`SELECT 
+						s.ShopID,
+						s.ShopName,
+						s.ShopBranch,
+						s.ShopAddress,
+						c.CityName
 				FROM 
 						shop AS s 
 				JOIN 
 						shopcity AS sc ON s.shopid = sc.shopid
 				JOIN 
 						city AS c ON c.cityid = sc.cityid
-				LEFT JOIN
-						shopdish AS sd ON sd.shopid = s.shopid
-				LEFT JOIN
-						dish AS d ON d.dishid = sd.dishid
-				LEFT JOIN 
-						(
-								SELECT 
-										shopid, 
-										AVG(CommentTaste) AS AvgTaste, 
-										AVG(CommentEnvironment) AS AvgEnvironment, 
-										AVG(CommentService) AS AvgService
-								FROM shopcomment
-								GROUP BY shopid
-						) AS avgScore ON avgScore.shopid = s.shopid
-				LEFT JOIN 
-						(
-								SELECT 
-										shopid,
-										COALESCE(SUM(CASE WHEN CommentTaste = 0 THEN 1 ELSE 0 END), 0) AS RatingCount0,
-										COALESCE(SUM(CASE WHEN CommentTaste = 1 THEN 1 ELSE 0 END), 0) AS RatingCount1,
-										COALESCE(SUM(CASE WHEN CommentTaste = 2 THEN 1 ELSE 0 END), 0) AS RatingCount2,
-										COALESCE(SUM(CASE WHEN CommentTaste = 3 THEN 1 ELSE 0 END), 0) AS RatingCount3,
-										COALESCE(SUM(CASE WHEN CommentTaste = 4 THEN 1 ELSE 0 END), 0) AS RatingCount4,
-										COALESCE(SUM(CASE WHEN CommentTaste = 5 THEN 1 ELSE 0 END), 0) AS RatingCount5
-								FROM shopcomment
-								GROUP BY shopid
-						) AS ratingCounts ON ratingCounts.shopid = s.shopid
-				LEFT JOIN 
-						(
-								SELECT shopid, COUNT(commentid) as ActualCommentCount
-								FROM shopcomment
-								GROUP BY shopid
-						) AS commentData ON s.shopid = commentData.shopid
 				WHERE 
-						s.shopid = ? 
-				LIMIT 1	
+						s.shopid = ?
+				LIMIT 1;
+			`,
+				[id],
+			),
+			connection.query<RowDataPacket[]>(
+				`SELECT 
+						GROUP_CONCAT(d.DishName SEPARATOR ', ') AS DishNames
+				FROM 
+						shopdish AS sd 
+				LEFT JOIN 
+						dish AS d ON d.dishid = sd.dishid
+				WHERE 
+						sd.shopid = ?
+				GROUP BY 
+						sd.shopid;
 				`,
-			[id],
-		);
+				[id],
+			),
+			connection.query<RowDataPacket[]>(
+				`
+			SELECT 
+					AVG(CommentTaste) AS AvgTaste, 
+					AVG(CommentEnvironment) AS AvgEnvironment, 
+					AVG(CommentService) AS AvgService
+			FROM 
+					shopcomment
+			WHERE 
+					shopid = ?
+			GROUP BY 
+					shopid;
+			`,
+				[id],
+			),
+			connection.query<RowDataPacket[]>(
+				`SELECT 
+						COALESCE(SUM(CASE WHEN CommentTaste = 0 THEN 1 ELSE 0 END), 0) AS RatingCount0,
+						COALESCE(SUM(CASE WHEN CommentTaste = 1 THEN 1 ELSE 0 END), 0) AS RatingCount1,
+						COALESCE(SUM(CASE WHEN CommentTaste = 2 THEN 1 ELSE 0 END), 0) AS RatingCount2,
+						COALESCE(SUM(CASE WHEN CommentTaste = 3 THEN 1 ELSE 0 END), 0) AS RatingCount3,
+						COALESCE(SUM(CASE WHEN CommentTaste = 4 THEN 1 ELSE 0 END), 0) AS RatingCount4,
+						COALESCE(SUM(CASE WHEN CommentTaste = 5 THEN 1 ELSE 0 END), 0) AS RatingCount5
+				FROM 
+						shopcomment
+				WHERE 
+						shopid = ?
+				GROUP BY 
+						shopid;
+			`,
+				[id],
+			),
+			connection.query<RowDataPacket[]>(
+				`SELECT 
+						COUNT(commentid) as ActualCommentCount
+				FROM 
+						shopcomment
+				WHERE 
+						shopid = ?
+				GROUP BY 
+						shopid;
+			`,
+				[id],
+			),
+		]);
 		await connection.end();
-		return rows;
+		return {
+			info,
+			dishNames,
+			avgScore,
+			ratingCounts,
+			commentCount,
+		};
 	},
 };
 
