@@ -215,7 +215,7 @@ watch(
 watch(
 	() => searchStore.page,
 	async () => {
-		await handlePageChange(searchStore.page);
+		Promise.all([scrollToTop(), handlePageChange(searchStore.page)]);
 	},
 );
 
@@ -227,6 +227,15 @@ watch(
 		await handleSortChange(searchStore.sortMethod);
 	},
 );
+
+function scrollToTop() {
+	if (process.client) {
+		return new Promise((resolve) => {
+			window.scrollTo({ top: 0, behavior: "smooth" });
+			resolve(true);
+		});
+	}
+}
 </script>
 <template>
 	<div class="w-full my-[120px] mx-auto">
