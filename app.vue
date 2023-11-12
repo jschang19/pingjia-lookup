@@ -5,6 +5,8 @@
 				<NuxtPage />
 			</PageContainer>
 		</UContainer>
-		<UNotifications />
+		<ClientOnly>
+			<UNotifications />
+		</ClientOnly>
 	</div>
 </template>
