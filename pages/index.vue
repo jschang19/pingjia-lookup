@@ -9,6 +9,28 @@ definePageMeta({
 	keepalive: true,
 });
 
+useHead({
+	title: "評呷名 - 餐廳評論找尋器",
+	meta: [
+		{
+			name: "description",
+			content: "Find something good to eat 😋",
+		},
+		{
+			name: "keywords",
+			content: "評呷名, 餐廳, 評論, 找尋器",
+		},
+		{
+			name: "robots",
+			content: "noindex, nofollow",
+		},
+	],
+});
+
+useSeoMeta({
+	ogImage: "https://jcshawn.com/wp-content/uploads/2023/11/restshawn-banner.jpg",
+});
+
 const searchStore = useSearchStore();
 const toast = useToast();
 const hasSearched = ref(false);
@@ -193,7 +215,7 @@ watch(
 );
 </script>
 <template>
-	<div class="w-full my-[120px] mx-auto">
+	<div class="w-full">
 		<ClientOnly>
 			<div class="flex flex-col gap-3 mb-6">
 				<h1 class="text-3xl font-bold u-text-white text-left">評呷名</h1>

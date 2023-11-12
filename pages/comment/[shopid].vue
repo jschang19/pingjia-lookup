@@ -139,6 +139,20 @@ watch(
 		}
 	},
 );
+
+useHead({
+	title: `${shopInfo.value?.name} ${shopInfo.value?.branch} 的顧客評論 - 評呷名`,
+	meta: [
+		{
+			hid: "description",
+			name: "description",
+			content: `${shopInfo.value?.name} ${shopInfo.value?.branch} 的顧客評論 - 評呷名`,
+		},
+	],
+});
+useSeoMeta({
+	ogImage: "https://jcshawn.com/wp-content/uploads/2023/11/restshawn-banner.jpg",
+});
 </script>
 
 <template>
