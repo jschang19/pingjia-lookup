@@ -262,9 +262,7 @@ const ShopService: {
 			FROM 
 					shopcomment
 			WHERE 
-					shopid = ?
-			GROUP BY 
-					shopid;
+					shopid = ?;
 			`,
 				[id],
 			),
@@ -279,9 +277,7 @@ const ShopService: {
 				FROM 
 						shopcomment
 				WHERE 
-						shopid = ?
-				GROUP BY 
-						shopid;
+						shopid = ?;
 			`,
 				[id],
 			),
@@ -291,9 +287,7 @@ const ShopService: {
 				FROM 
 						shopcomment
 				WHERE 
-						shopid = ?
-				GROUP BY 
-						shopid;
+						shopid = ?;
 			`,
 				[id],
 			),
