@@ -3,6 +3,9 @@ export default defineNuxtConfig({
 	devtools: { enabled: true },
 	modules: ["@nuxt/ui", "@pinia/nuxt"],
 	nitro: {
-		compressPublicAssets: true,
+		compressPublicAssets: {
+			gzip: true,
+			brotli: true,
+		},
 	},
 });
