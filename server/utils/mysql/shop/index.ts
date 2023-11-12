@@ -274,17 +274,22 @@ const ShopService: {
 				[id],
 			),
 			connection.query<RowDataPacket[]>(
-				`SELECT 
-						COALESCE(SUM(CASE WHEN CommentTaste = 0 THEN 1 ELSE 0 END), 0) AS RatingCount0,
-						COALESCE(SUM(CASE WHEN CommentTaste = 1 THEN 1 ELSE 0 END), 0) AS RatingCount1,
-						COALESCE(SUM(CASE WHEN CommentTaste = 2 THEN 1 ELSE 0 END), 0) AS RatingCount2,
-						COALESCE(SUM(CASE WHEN CommentTaste = 3 THEN 1 ELSE 0 END), 0) AS RatingCount3,
-						COALESCE(SUM(CASE WHEN CommentTaste = 4 THEN 1 ELSE 0 END), 0) AS RatingCount4,
-						COALESCE(SUM(CASE WHEN CommentTaste = 5 THEN 1 ELSE 0 END), 0) AS RatingCount5
-				FROM 
-						shopcomment
-				WHERE 
-						shopid = ?;
+				`SELECT
+						SUM(CASE WHEN RoundedAvg BETWEEN 0 AND 0.999 THEN 1 ELSE 0 END) AS RatingCount0, 
+						SUM(CASE WHEN RoundedAvg BETWEEN 1 AND 1.999 THEN 1 ELSE 0 END) AS RatingCount1,
+						SUM(CASE WHEN RoundedAvg BETWEEN 2 AND 2.999 THEN 1 ELSE 0 END) AS RatingCount2,
+						SUM(CASE WHEN RoundedAvg BETWEEN 3 AND 3.999 THEN 1 ELSE 0 END) AS RatingCount3,
+						SUM(CASE WHEN RoundedAvg BETWEEN 4 AND 4.999 THEN 1 ELSE 0 END) AS RatingCount4,
+						SUM(CASE WHEN RoundedAvg >= 5 THEN 1 ELSE 0 END) AS RatingCount5
+					FROM (
+							SELECT 
+									ShopID,
+									ROUND((CommentTaste + CommentEnvironment + CommentService) / 3, 0) AS RoundedAvg
+							FROM 
+									shopcomment
+							WHERE 
+									ShopID = ?
+					) AS SubQuery
 			`,
 				[id],
 			),
