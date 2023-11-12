@@ -15,7 +15,7 @@ function calculateAverageScore(row: any): number {
 function parseRatingCounts(row: any): Record<string, number> {
 	const ratings: Record<string, number> = {};
 	for (let i = 0; i <= 5; i++) {
-		ratings[i] = Number(row[`RatingCount${i} `]) || 0;
+		ratings[i] = Number(row[`RatingCount${i}`]) || 0;
 	}
 	return ratings;
 }
