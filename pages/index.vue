@@ -6,12 +6,10 @@ interface Response {
 	total: number;
 }
 definePageMeta({
-	title: "評呷名",
 	keepalive: true,
 });
 
 const searchStore = useSearchStore();
-const total = ref(0);
 const toast = useToast();
 const hasSearched = ref(false);
 const isLoading = ref(false);
@@ -21,29 +19,6 @@ const cityOptions = ref<
 		value: string;
 	}[]
 >([]);
-
-const sortOptions = ref<
-	{
-		label: string;
-		value: string;
-	}[]
->([
-	{
-		label: "評價最高",
-		value: "rating",
-	},
-	{
-		label: "價格最低",
-		value: "price_asc",
-	},
-	{
-		label: "價格最高",
-		value: "price_desc",
-	},
-]);
-
-const sortMethod = ref(sortOptions.value[0].value);
-const shops = ref<ShopInfo[]>([]);
 
 const shopApiService = {
 	async fetchShops({
@@ -92,7 +67,7 @@ const shopApiService = {
 		const { data: cachedStores } = useNuxtData(
 			`search_${last ? searchStore.lastSearchData.city : searchStore.inputSearchData.city}_${
 				last ? searchStore.lastSearchData.name : searchStore.inputSearchData.name
-			}_${page}_${pageSize}_${sortMethod.value}`,
+			}_${page}_${pageSize}_${searchStore.sortMethod}`,
 		);
 		if (cachedStores.value) {
 			return cachedStores.value;
@@ -125,8 +100,8 @@ const handleSearch = async () => {
 		});
 		const cachedShops = shopApiService.getCache(0, 10);
 		if (cachedShops) {
-			shops.value = cachedShops.shops;
-			total.value = cachedShops.total;
+			searchStore.shops = cachedShops.shops;
+			searchStore.total = cachedShops.total;
 			searchStore.page = 1;
 			return;
 		}
@@ -134,10 +109,10 @@ const handleSearch = async () => {
 			...searchStore.inputSearchData,
 			current: 0,
 			pageSize: 10,
-			orderBy: sortMethod.value,
+			orderBy: searchStore.sortMethod,
 		});
-		shops.value = data.shops;
-		total.value = data.total;
+		searchStore.shops = data.shops;
+		searchStore.total = data.total;
 		searchStore.page = 1;
 	} catch (e) {
 		console.log(e);
@@ -148,19 +123,19 @@ const handlePageChange = async (page: number) => {
 	try {
 		const cachedShops = shopApiService.getCache((page - 1) * 10, 10, true);
 		if (cachedShops) {
-			shops.value = cachedShops.shops;
-			total.value = cachedShops.total;
+			searchStore.shops = cachedShops.shops;
+			searchStore.total = cachedShops.total;
 			return;
 		}
 		const data = await shopApiService.fetchShops({
 			...searchStore.lastSearchData,
 			current: (page - 1) * 10,
 			pageSize: 10,
-			orderBy: sortMethod.value,
+			orderBy: searchStore.sortMethod,
 		});
 
-		shops.value = data.shops || [];
-		total.value = data.total || 0;
+		searchStore.shops = data.shops || [];
+		searchStore.total = data.total || 0;
 	} catch (e) {
 		return;
 	}
@@ -170,8 +145,8 @@ const handleSortChange = async (sortMethod: string) => {
 	try {
 		const cachedShops = shopApiService.getCache(0, 10, true);
 		if (cachedShops) {
-			shops.value = cachedShops.shops;
-			total.value = cachedShops.total;
+			searchStore.shops = cachedShops.shops;
+			searchStore.total = cachedShops.total;
 			return;
 		}
 		const data = await shopApiService.fetchShops({
@@ -181,16 +156,11 @@ const handleSortChange = async (sortMethod: string) => {
 			orderBy: sortMethod,
 		});
 
-		shops.value = data.shops || [];
-		total.value = data.total || 0;
+		searchStore.shops = data.shops || [];
+		searchStore.total = data.total || 0;
 	} catch (e) {
 		return;
 	}
-};
-
-const handleReset = () => {
-	searchStore.inputSearchData.city = "";
-	searchStore.inputSearchData.name = "";
 };
 
 const { data: cities } = useNuxtData("cities");
@@ -233,12 +203,13 @@ const currentCity = computed(() => {
 });
 
 const hasShop = computed(() => {
-	return shops.value.length > 0;
+	return searchStore.shops.length > 0;
 });
 
 watch(
 	() => searchStore.inputSearchData.city,
-	async () => {
+	() => {
+		// flush name
 		if (searchStore.inputSearchData.name) {
 			searchStore.inputSearchData.name = "";
 		}
@@ -253,20 +224,13 @@ watch(
 );
 
 watch(
-	() => sortMethod.value,
+	() => searchStore.sortMethod,
 	async () => {
-		if (total.value === 1) return;
+		if (searchStore.total === 1) return;
 		searchStore.page = 1;
-		await handleSortChange(sortMethod.value);
+		await handleSortChange(searchStore.sortMethod);
 	},
 );
-
-onDeactivated(() => {
-	searchStore.setLastSearchData({
-		city: "",
-		name: "",
-	});
-});
 </script>
 <template>
 	<div class="w-full my-[120px] mx-auto">
@@ -304,17 +268,22 @@ onDeactivated(() => {
 					</div>
 				</UForm>
 				<div class="flex justify-start md:justify-end mt-3">
-					<UButton size="xs" color="gray" @click="handleReset" variant="ghost">清除條件</UButton>
+					<UButton size="xs" color="gray" @click="searchStore.resetSearchData" variant="ghost">清除條件</UButton>
 				</div>
 			</div>
 			<div class="gap-4 my-4">
 				<div v-if="hasShop" class="flex flex-col gap-3">
 					<UDivider />
 					<div class="flex flex-row justify-end gap-2">
-						<USelect size="sm" v-model="sortMethod" :options="sortOptions" />
+						<USelect size="sm" v-model="searchStore.sortMethod" :options="searchStore.sortOptions" />
 					</div>
-					<ShopResult v-for="shop in shops" :key="shop.id" :shop="shop" />
-					<UPagination v-if="hasShop && total > 10" v-model="searchStore.page" :page-count="10" :total="total" />
+					<ShopResult v-for="shop in searchStore.shops" :key="shop.id" :shop="shop" />
+					<UPagination
+						v-if="hasShop && searchStore.total > 10"
+						v-model="searchStore.page"
+						:page-count="10"
+						:total="searchStore.total"
+					/>
 				</div>
 				<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
 					沒有符合條件的餐廳
