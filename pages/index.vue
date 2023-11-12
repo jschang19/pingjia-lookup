@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useSearchStore } from "~/stores/search";
 import { type ShopInfo } from "~/types/shop";
+interface Response {
+	shops: ShopInfo[];
+	total: number;
+}
 definePageMeta({
 	title: "評呷名",
 	keepalive: true,
@@ -11,12 +15,6 @@ const total = ref(0);
 const toast = useToast();
 const hasSearched = ref(false);
 const isLoading = ref(false);
-
-interface Response {
-	shops: ShopInfo[];
-	total: number;
-}
-
 const cityOptions = ref<
 	{
 		label: string;
@@ -48,7 +46,7 @@ const sortMethod = ref(sortOptions.value[0].value);
 const shops = ref<ShopInfo[]>([]);
 
 const shopApiService = {
-	async fetchComments({
+	async fetchShops({
 		city,
 		name,
 		current,
@@ -74,12 +72,13 @@ const shopApiService = {
 				pageSize,
 				orderBy,
 			}),
+			key: `search_${city}_${name}_${current}_${pageSize}_${orderBy}`,
 		});
 		if (error.value) {
 			toast.add({
 				id: "search_error",
 				title: "搜尋失敗",
-				description: "請稍後再試",
+				description: "請重新整理頁面再試",
 				icon: "i-heroicons-information-circle",
 				color: "red",
 				timeout: 2000,
@@ -87,6 +86,18 @@ const shopApiService = {
 		}
 		isLoading.value = false;
 		return data.value!;
+	},
+
+	getCache(page: number, pageSize: number, last: boolean = false) {
+		const { data: cachedStores } = useNuxtData(
+			`search_${last ? searchStore.lastSearchData.city : searchStore.inputSearchData.city}_${
+				last ? searchStore.lastSearchData.name : searchStore.inputSearchData.name
+			}_${page}_${pageSize}_${sortMethod.value}`,
+		);
+		if (cachedStores.value) {
+			return cachedStores.value;
+		}
+		return null;
 	},
 };
 
@@ -108,7 +119,18 @@ const handleSearch = async () => {
 	}
 	hasSearched.value = true;
 	try {
-		const data = await shopApiService.fetchComments({
+		searchStore.setLastSearchData({
+			city: searchStore.inputSearchData.city,
+			name: searchStore.inputSearchData.name,
+		});
+		const cachedShops = shopApiService.getCache(0, 10);
+		if (cachedShops) {
+			shops.value = cachedShops.shops;
+			total.value = cachedShops.total;
+			searchStore.page = 1;
+			return;
+		}
+		const data = await shopApiService.fetchShops({
 			...searchStore.inputSearchData,
 			current: 0,
 			pageSize: 10,
@@ -117,37 +139,53 @@ const handleSearch = async () => {
 		shops.value = data.shops;
 		total.value = data.total;
 		searchStore.page = 1;
-		searchStore.setLastSearchData({
-			city: searchStore.inputSearchData.city,
-			name: searchStore.inputSearchData.name,
-		});
 	} catch (e) {
 		console.log(e);
 	}
 };
 
 const handlePageChange = async (page: number) => {
-	const data = await shopApiService.fetchComments({
-		...searchStore.lastSearchData,
-		current: (page - 1) * 10,
-		pageSize: 10,
-		orderBy: sortMethod.value,
-	});
+	try {
+		const cachedShops = shopApiService.getCache((page - 1) * 10, 10, true);
+		if (cachedShops) {
+			shops.value = cachedShops.shops;
+			total.value = cachedShops.total;
+			return;
+		}
+		const data = await shopApiService.fetchShops({
+			...searchStore.lastSearchData,
+			current: (page - 1) * 10,
+			pageSize: 10,
+			orderBy: sortMethod.value,
+		});
 
-	shops.value = data.shops || [];
-	total.value = data.total || 0;
+		shops.value = data.shops || [];
+		total.value = data.total || 0;
+	} catch (e) {
+		return;
+	}
 };
 
 const handleSortChange = async (sortMethod: string) => {
-	const data = await shopApiService.fetchComments({
-		...searchStore.lastSearchData,
-		current: 0,
-		pageSize: 10,
-		orderBy: sortMethod,
-	});
+	try {
+		const cachedShops = shopApiService.getCache(0, 10, true);
+		if (cachedShops) {
+			shops.value = cachedShops.shops;
+			total.value = cachedShops.total;
+			return;
+		}
+		const data = await shopApiService.fetchShops({
+			...searchStore.lastSearchData,
+			current: 0,
+			pageSize: 10,
+			orderBy: sortMethod,
+		});
 
-	shops.value = data.shops || [];
-	total.value = data.total || 0;
+		shops.value = data.shops || [];
+		total.value = data.total || 0;
+	} catch (e) {
+		return;
+	}
 };
 
 const handleReset = () => {
@@ -155,17 +193,40 @@ const handleReset = () => {
 	searchStore.inputSearchData.name = "";
 };
 
-const { data: apiCities } = await useFetch<
-	{
-		id: string;
-		name: string;
-	}[]
->("/api/city");
+const { data: cities } = useNuxtData("cities");
 
-cityOptions.value = apiCities.value!.map((city) => ({
-	label: city.name,
-	value: city.id,
-}));
+if (cities.value) {
+	cityOptions.value = cities.value.map((city: any) => ({
+		label: city.name,
+		value: city.id,
+	}));
+} else {
+	const { data: apiCities, error } = await useFetch<
+		{
+			id: string;
+			name: string;
+		}[]
+	>("/api/city", {
+		key: "cities",
+	});
+
+	if (error.value) {
+		toast.add({
+			id: "search_error",
+			title: "搜尋失敗",
+			description: "請稍後再試",
+			icon: "i-heroicons-information-circle",
+			color: "red",
+			timeout: 2000,
+		});
+		cityOptions.value = [];
+	} else {
+		cityOptions.value = apiCities.value!.map((city) => ({
+			label: city.name,
+			value: city.id,
+		}));
+	}
+}
 
 const currentCity = computed(() => {
 	return cityOptions.value.find((city) => city.value === searchStore.inputSearchData.city);
@@ -194,6 +255,7 @@ watch(
 watch(
 	() => sortMethod.value,
 	async () => {
+		if (total.value === 1) return;
 		searchStore.page = 1;
 		await handleSortChange(sortMethod.value);
 	},
