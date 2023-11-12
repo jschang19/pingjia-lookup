@@ -59,7 +59,7 @@ export function parseSingleShopResult(shop: ShopInfo) {
 		branch: info.ShopBranch,
 		city: info.CityID,
 		cityName: info.CityName,
-		commentCount: commentCount.CommentCount,
+		commentCount: commentCount.ActualCommentCount,
 		averagePrice: Math.round(info.AvgPrice * 10) / 10 || "--",
 		averageScore: calculateAverageScore(avgScores),
 		ratingCounts: parseRatingCounts(ratingCounts),
