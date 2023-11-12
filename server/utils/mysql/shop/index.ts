@@ -45,7 +45,7 @@ const ShopService: {
 
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				`SELECT COUNT(DISTINCT(s.ShopID)) AS total 
+				`SELECT COUNT(s.shopid) AS total 
 					FROM shop AS s 
 					JOIN 
 							shopcity AS sc ON s.shopid = sc.shopid
@@ -105,16 +105,19 @@ const ShopService: {
 		const connection = await initConnection();
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				`SELECT COUNT(DISTINCT(s.shopid)) AS total FROM shopcity AS sc 
+				`SELECT COUNT(s.shopid) AS total FROM shopcity AS sc 
 						JOIN shop AS s ON s.shopid = sc.ShopId 
 						JOIN city AS c ON c.cityid = sc.cityid 
-						LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
-						LEFT JOIN dish AS d ON d.dishid = sd.dishid
 						WHERE sc.CityID = ?`,
 				[city],
 			),
 			connection.query<RowDataPacket[]>(
-				`SELECT DISTINCT s.*, c.CityName,
+				`SELECT
+					s.ShopID,
+					s.ShopName,
+					s.ShopBranch,
+					s.ShopAddress, 
+					c.CityName,
 					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
@@ -129,10 +132,6 @@ const ShopService: {
 						shopcity AS sc ON s.shopid = sc.ShopId
 				JOIN
 						city AS c ON c.cityid = sc.cityid
-				LEFT JOIN
-						shopdish AS sd ON s.shopid = sd.shopid
-				LEFT JOIN
-						dish AS d ON d.dishid = sd.dishid
 				LEFT JOIN 
 						(
 								SELECT 
@@ -165,16 +164,17 @@ const ShopService: {
 		// promise all
 		const [[total], [rows]] = await Promise.all([
 			connection.query<RowDataPacket[]>(
-				`SELECT COUNT(DISTINCT(s.shopid)) AS total FROM shopcity AS sc 
+				`SELECT COUNT(s.shopid) AS total FROM shopcity AS sc 
 				JOIN shop AS s ON s.shopid = sc.ShopId JOIN city AS c ON c.cityid = sc.cityid 
-				LEFT JOIN shopdish AS sd ON s.shopid = sd.shopid
-				LEFT JOIN dish AS d ON d.dishid = sd.dishid
-				WHERE sc.CityID = ? AND (s.ShopName LIKE ? OR d.DishName LIKE ?);`,
-				[city, likeTerm, likeTerm],
+				WHERE sc.CityID = ? AND s.ShopName LIKE ? ;`,
+				[city, likeTerm],
 			),
 			connection.query<RowDataPacket[]>(
 				`SELECT 
-					s.*, 
+					s.ShopID,
+					s.ShopName,
+					s.ShopBranch,
+					s.ShopAddress, 
 					c.CityName, 
 					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
