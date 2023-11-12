@@ -142,7 +142,7 @@ watch(
 </script>
 
 <template>
-	<div class="w-full my-[120px] mx-auto overflow-hidden">
+	<div class="w-full mx-auto overflow-hidden">
 		<div v-if="hasShopInfo">
 			<div class="flex flex-col gap-4 pb-6">
 				<CommentTopHeading :shopInfo="shopInfo!" />
