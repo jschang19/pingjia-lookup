@@ -125,6 +125,7 @@ const ShopService: {
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
 					COALESCE(avgScore.AvgService, 0) as AvgService
+					COALESCE(avgScore.AvgPrice, 0) as AvgPrice
 				FROM shop AS s
 				LEFT JOIN (
 						SELECT shopid, COUNT(commentid) as ActualCommentCount
@@ -141,6 +142,7 @@ const ShopService: {
 										AVG(CommentTaste) AS AvgTaste, 
 										AVG(CommentEnvironment) AS AvgEnvironment, 
 										AVG(CommentService) AS AvgService, 
+										AVG(AvgPrice) AS AvgPrice,
 										shopid
 								FROM shopcomment
 								GROUP BY shopid
@@ -183,6 +185,7 @@ const ShopService: {
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
 					COALESCE(avgScore.AvgService, 0) as AvgService
+					COALESCE(avgScore.AvgPrice, 0) as AvgPrice
 					FROM 
 							shopcity AS sc 
 					JOIN 
@@ -201,6 +204,7 @@ const ShopService: {
 											AVG(CommentTaste) AS AvgTaste, 
 											AVG(CommentEnvironment) AS AvgEnvironment, 
 											AVG(CommentService) AS AvgService, 
+											AVG(AvgPrice) AS AvgPrice,
 											shopid
 									FROM shopcomment
 									GROUP BY shopid
