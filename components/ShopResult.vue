@@ -23,10 +23,10 @@ const commentUrl = computed(() => `/comment/${props.shop.id}`);
 <template>
 	<div>
 		<NuxtLink :to="commentUrl">
-			<UCard class="w-full">
+			<div class="w-full py-4">
 				<div class="flex flex-col gap-2">
 					<div class="flex flex-row gap-3">
-						<h6 class="text-lg font-bold self-center">{{ props.shop.name }}</h6>
+						<h6 class="text-md font-bold self-center">{{ props.shop.name }}</h6>
 						<span class="text-sm self-center text-gray-500 dark:text-gray-400">{{ props.shop.branch }}</span>
 					</div>
 					<div class="flex flex-col gap-1 text-gray-600 dark:text-gray-400">
@@ -48,7 +48,7 @@ const commentUrl = computed(() => `/comment/${props.shop.id}`);
 						>
 					</div>
 				</div>
-			</UCard>
+			</div>
 		</NuxtLink>
 	</div>
 </template>
