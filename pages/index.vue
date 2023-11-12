@@ -13,6 +13,7 @@ const searchStore = useSearchStore();
 const toast = useToast();
 const hasSearched = ref(false);
 const isLoading = ref(false);
+const pageSize = 20;
 
 const shopApiService = {
 	async fetchShops({
@@ -41,7 +42,6 @@ const shopApiService = {
 				pageSize,
 				orderBy,
 			}),
-			key: `search_${city}_${name}_${current}_${pageSize}_${orderBy}`,
 		});
 		if (error.value) {
 			toast.add({
@@ -55,18 +55,6 @@ const shopApiService = {
 		}
 		isLoading.value = false;
 		return data.value!;
-	},
-
-	getCache(page: number, pageSize: number, last: boolean = false) {
-		const { data: cachedStores } = useNuxtData(
-			`search_${last ? searchStore.lastSearchData.city : searchStore.inputSearchData.city}_${
-				last ? searchStore.lastSearchData.name : searchStore.inputSearchData.name
-			}_${page}_${pageSize}_${searchStore.sortMethod}`,
-		);
-		if (cachedStores.value) {
-			return cachedStores.value;
-		}
-		return null;
 	},
 };
 
@@ -92,19 +80,11 @@ const handleSearch = async () => {
 			city: searchStore.inputSearchData.city,
 			name: searchStore.inputSearchData.name,
 		});
-		const cachedShops = shopApiService.getCache(0, 10);
-
-		if (cachedShops) {
-			searchStore.shops = cachedShops.shops;
-			searchStore.total = cachedShops.total;
-			searchStore.page = 1;
-			return;
-		}
 
 		const data = await shopApiService.fetchShops({
 			...searchStore.inputSearchData,
 			current: 0,
-			pageSize: 10,
+			pageSize,
 			orderBy: searchStore.sortMethod,
 		});
 		searchStore.shops = data.shops;
@@ -118,16 +98,10 @@ const handleSearch = async () => {
 const handlePageChange = async () => {
 	try {
 		searchStore.page++;
-		const cachedShops = shopApiService.getCache((searchStore.page - 1) * 10, 10, true);
-		if (cachedShops) {
-			searchStore.shops = cachedShops.shops;
-			searchStore.total = cachedShops.total;
-			return;
-		}
 		const data = await shopApiService.fetchShops({
 			...searchStore.lastSearchData,
-			current: (searchStore.page - 1) * 10,
-			pageSize: 10,
+			current: (searchStore.page - 1) * pageSize,
+			pageSize,
 			orderBy: searchStore.sortMethod,
 		});
 
@@ -142,16 +116,10 @@ const handlePageChange = async () => {
 
 const handleSortChange = async (sortMethod: string) => {
 	try {
-		const cachedShops = shopApiService.getCache(0, 10, true);
-		if (cachedShops) {
-			searchStore.shops = cachedShops.shops;
-			searchStore.total = cachedShops.total;
-			return;
-		}
 		const data = await shopApiService.fetchShops({
 			...searchStore.lastSearchData,
 			current: 0,
-			pageSize: 10,
+			pageSize,
 			orderBy: sortMethod,
 		});
 
@@ -223,22 +191,6 @@ watch(
 		await handleSortChange(searchStore.sortMethod);
 	},
 );
-
-// function checkScroll() {
-// 	const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-// 	if (!hasSearched.value) return;
-// 	if (scrollHeight - scrollTop <= clientHeight * 1.5 && !isLoading.value) {
-// 		handlePageChange();
-// 	}
-// }
-
-// onMounted(() => {
-// 	window.addEventListener("scroll", checkScroll);
-// });
-
-// onUnmounted(() => {
-// 	window.removeEventListener("scroll", checkScroll);
-// });
 </script>
 <template>
 	<div class="w-full my-[120px] mx-auto">
