@@ -22,7 +22,6 @@ const comments = ref<Comment[]>([]);
 const shopInfo = ref<ShopInfo | null>();
 const recommend = ref<ShopInfo[]>();
 const pageSize = 4;
-const hasShopInfo = ref(false);
 const sortOption = [
 	{
 		label: "日期",
@@ -102,51 +101,34 @@ const fecthLoadMore = async (page: number) => {
 };
 
 try {
-	const initialComments = await commentService.fetchComments({
-		shopId,
-		current: 0,
-		pageSize: page.value * pageSize,
-		orderBy: selectedSortOption.value.value,
-	});
-	comments.value = initialComments.comments;
-	total.value = initialComments.total;
-} catch (e) {
-	// nothing
-	comments.value = [];
-}
+	const [{ data: apiRecommendShops }, apiComments, { data: apiShopInfo }] = await Promise.all([
+		useFetch<RecommedResponse>(`/api/shop/recommend/${shopId}`, {
+			method: "GET",
+		}),
+		commentService.fetchComments({
+			shopId,
+			current: 0,
+			pageSize: page.value * pageSize,
+			orderBy: selectedSortOption.value.value,
+		}),
+		useFetch<{
+			shop: ShopInfo;
+		}>(`/api/shop/${shopId}`, {
+			method: "GET",
+		}),
+	]);
 
-try {
-	const { data: apiShopInfo } = await useFetch<{
-		shop: ShopInfo;
-	}>(`/api/shop/${shopId}`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-		},
-	});
+	recommend.value = apiRecommendShops.value!.recommend;
+	comments.value = apiComments.comments;
+	total.value = apiComments.total;
 	shopInfo.value = apiShopInfo.value!.shop;
-	hasShopInfo.value = true;
-} catch (e) {
-	// nothing
-	shopInfo.value = null;
-}
-
-try {
-	const { data: apiRecommendShops, error } = await useFetch<RecommedResponse>(`/api/shop/recommend/${shopId}`, {
-		method: "GET",
-	});
-	if (error.value) {
-		console.log(error.value);
-	} else {
-		recommend.value = apiRecommendShops.value!.recommend;
-	}
 } catch (e) {
 	console.log(e);
-	recommend.value = [];
 }
 
 const hasReiew = computed(() => comments.value.length > 0);
 const hasMore = computed(() => comments.value.length < total.value);
+const hasShopInfo = computed(() => shopInfo.value !== null);
 
 watch(
 	() => selectedSortOption.value,
