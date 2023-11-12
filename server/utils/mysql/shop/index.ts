@@ -124,7 +124,7 @@ const ShopService: {
 					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
-					COALESCE(avgScore.AvgService, 0) as AvgService
+					COALESCE(avgScore.AvgService, 0) as AvgService,
 					COALESCE(avgScore.AvgPrice, 0) as AvgPrice
 				FROM shop AS s
 				LEFT JOIN (
@@ -184,7 +184,7 @@ const ShopService: {
 					COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
 					COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
 					COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
-					COALESCE(avgScore.AvgService, 0) as AvgService
+					COALESCE(avgScore.AvgService, 0) as AvgService,
 					COALESCE(avgScore.AvgPrice, 0) as AvgPrice
 					FROM 
 							shopcity AS sc 
