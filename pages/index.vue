@@ -13,12 +13,6 @@ const searchStore = useSearchStore();
 const toast = useToast();
 const hasSearched = ref(false);
 const isLoading = ref(false);
-const cityOptions = ref<
-	{
-		label: string;
-		value: string;
-	}[]
->([]);
 
 const shopApiService = {
 	async fetchShops({
@@ -99,12 +93,14 @@ const handleSearch = async () => {
 			name: searchStore.inputSearchData.name,
 		});
 		const cachedShops = shopApiService.getCache(0, 10);
+
 		if (cachedShops) {
 			searchStore.shops = cachedShops.shops;
 			searchStore.total = cachedShops.total;
 			searchStore.page = 1;
 			return;
 		}
+
 		const data = await shopApiService.fetchShops({
 			...searchStore.inputSearchData,
 			current: 0,
@@ -165,8 +161,8 @@ const handleSortChange = async (sortMethod: string) => {
 
 const { data: cities } = useNuxtData("cities");
 
-if (cities.value) {
-	cityOptions.value = cities.value.map((city: any) => ({
+if (cities.value && searchStore.cityOptions.length === 0) {
+	searchStore.cityOptions = cities.value.map((city: any) => ({
 		label: city.name,
 		value: city.id,
 	}));
@@ -189,9 +185,9 @@ if (cities.value) {
 			color: "red",
 			timeout: 2000,
 		});
-		cityOptions.value = [];
+		searchStore.cityOptions = [];
 	} else {
-		cityOptions.value = apiCities.value!.map((city) => ({
+		searchStore.cityOptions = apiCities.value!.map((city) => ({
 			label: city.name,
 			value: city.id,
 		}));
@@ -199,7 +195,7 @@ if (cities.value) {
 }
 
 const currentCity = computed(() => {
-	return cityOptions.value.find((city) => city.value === searchStore.inputSearchData.city);
+	return searchStore.cityOptions.find((city) => city.value === searchStore.inputSearchData.city);
 });
 
 const hasShop = computed(() => {
@@ -245,7 +241,7 @@ watch(
 				<UForm :state="searchStore.inputSearchData" class="flex flex-col md:flex-row gap-3" @submit="handleSearch">
 					<USelectMenu
 						v-model="searchStore.inputSearchData.city"
-						:options="cityOptions"
+						:options="searchStore.cityOptions"
 						value-attribute="value"
 						size="lg"
 						class="max-md:max-w-full max-md:grow min-w-[125px]"

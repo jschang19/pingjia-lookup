@@ -34,6 +34,10 @@ export const useSearchStore = defineStore("search", {
 				value: "price_desc",
 			},
 		],
+		cityOptions: [] as {
+			label: string;
+			value: string;
+		}[],
 		sortMethod: "rating",
 	}),
 	actions: {
