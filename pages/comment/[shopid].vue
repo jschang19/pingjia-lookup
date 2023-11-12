@@ -19,8 +19,10 @@ const shopId = useRoute().params.shopid;
 const page = ref(1);
 const total = ref(0);
 const comments = ref<Comment[]>([]);
-const shopInfo = ref<ShopInfo>();
+const shopInfo = ref<ShopInfo | null>();
+const recommend = ref<ShopInfo[]>();
 const pageSize = 4;
+const hasShopInfo = ref(false);
 const sortOption = [
 	{
 		label: "日期",
@@ -52,6 +54,10 @@ const handleLoadMore = async () => {
 interface CommentResponse {
 	total: number;
 	comments: Comment[]; // Replace 'Comment' with the actual type of your comments
+}
+
+interface RecommedResponse {
+	recommend: ShopInfo[];
 }
 
 const commentService = {
@@ -95,38 +101,52 @@ const fecthLoadMore = async (page: number) => {
 	});
 };
 
-const initialComments = await commentService.fetchComments({
-	shopId,
-	current: 0,
-	pageSize: page.value * pageSize,
-	orderBy: selectedSortOption.value.value,
-});
+try {
+	const initialComments = await commentService.fetchComments({
+		shopId,
+		current: 0,
+		pageSize: page.value * pageSize,
+		orderBy: selectedSortOption.value.value,
+	});
+	comments.value = initialComments.comments;
+	total.value = initialComments.total;
+} catch (e) {
+	// nothing
+	comments.value = [];
+}
 
-const { data: ShopInfo } = await useFetch<{
-	shop: ShopInfo;
-}>(`/api/shop/${shopId}`, {
-	method: "GET",
-	headers: {
-		"Content-Type": "application/json",
-	},
-});
+try {
+	const { data: apiShopInfo } = await useFetch<{
+		shop: ShopInfo;
+	}>(`/api/shop/${shopId}`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
+	shopInfo.value = apiShopInfo.value!.shop;
+	hasShopInfo.value = true;
+} catch (e) {
+	// nothing
+	shopInfo.value = null;
+}
+
+try {
+	const { data: apiRecommendShops, error } = await useFetch<RecommedResponse>(`/api/shop/recommend/${shopId}`, {
+		method: "GET",
+	});
+	if (error.value) {
+		console.log(error.value);
+	} else {
+		recommend.value = apiRecommendShops.value!.recommend;
+	}
+} catch (e) {
+	console.log(e);
+	recommend.value = [];
+}
 
 const hasReiew = computed(() => comments.value.length > 0);
 const hasMore = computed(() => comments.value.length < total.value);
-const hasShopInfo = computed(() => shopInfo.value !== undefined && shopInfo.value !== null);
-
-watchEffect(() => {
-	if (initialComments) {
-		comments.value = initialComments.comments;
-		total.value = initialComments.total;
-	}
-});
-
-watchEffect(() => {
-	if (ShopInfo.value) {
-		shopInfo.value = ShopInfo.value.shop;
-	}
-});
 
 watch(
 	() => selectedSortOption.value,
@@ -173,9 +193,16 @@ watch(
 					<div v-else class="text-sm text-center text-gray-500 dark:text-gray-500">目前沒有評論</div>
 				</div>
 			</div>
-			<div class="flex flex-col gap-2">
-				<p class="text-xl font-medium">基本資訊</p>
-				<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
+			<div class="flex flex-col gap-10">
+				<div class="flex flex-col gap-2">
+					<h3 class="text-xl font-medium">基本資訊</h3>
+					<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
+				</div>
+				<UDivider />
+				<div class="flex flex-col gap-2" v-if="recommend!.length > 0">
+					<h3 class="text-xl font-medium">你可能還會喜歡⋯</h3>
+					<ShopResult v-for="shop in recommend" :key="shop.id" :shop="shop" />
+				</div>
 			</div>
 		</div>
 		<div v-else class="flex flex-col items-center gap-3">

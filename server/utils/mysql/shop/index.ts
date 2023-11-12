@@ -37,6 +37,9 @@ const ShopService: {
 		ratingCounts: RowDataPacket[];
 		commentCount: RowDataPacket[];
 	}>;
+	getRecommendById: (id: string) => Promise<{
+		rows: RowDataPacket[];
+	}>;
 } = {
 	getByName: async (name: string, offset: number, pageSize: number, orderBy: string) => {
 		const connection = await initConnection();
@@ -299,6 +302,62 @@ const ShopService: {
 			avgScore,
 			ratingCounts,
 			commentCount,
+		};
+	},
+
+	getRecommendById: async (id: string) => {
+		const connection = await initConnection();
+		const [rows] = await connection.query<RowDataPacket[]>(
+			`SELECT 
+				s.ShopID,
+				s.ShopName,
+				s.ShopBranch,
+				ShopAddress,
+				s.AvgPrice,
+				s.ShopAddress,
+				c.CityName,
+				COALESCE(commentData.ActualCommentCount, 0) as ActualCommentCount,
+				COALESCE(avgScore.AvgTaste, 0) as AvgTaste,
+				COALESCE(avgScore.AvgEnvironment, 0) as AvgEnvironment,
+				COALESCE(avgScore.AvgService, 0) as AvgService
+			FROM 
+					shop AS s
+			JOIN
+					shopdish AS sd ON s.ShopID = sd.ShopID
+			JOIN
+					dish AS d ON sd.DishID = d.DishID
+			JOIN
+					shopcity AS sc ON sc.shopid = s.shopid
+			JOIN
+					city AS c ON c.cityid = sc.cityid
+			LEFT JOIN (
+					SELECT shopid, COUNT(commentid) as ActualCommentCount
+					FROM shopcomment
+					GROUP BY shopid
+				) AS commentData ON s.shopid = commentData.shopid
+			LEFT JOIN 
+				(
+						SELECT 
+								AVG(CommentTaste) AS AvgTaste, 
+								AVG(CommentEnvironment) AS AvgEnvironment, 
+								AVG(CommentService) AS AvgService, 
+								shopid
+						FROM shopcomment
+						GROUP BY shopid
+				) AS avgScore ON avgScore.shopid = s.shopid
+			WHERE
+					sc.CityID = (SELECT CityID FROM shopcity WHERE ShopID = ?)
+					AND sd.DishID IN (SELECT DishID FROM shopdish WHERE ShopID = ?)
+					AND s.ShopID <> ?
+					AND ActualCommentCount > 0
+			ORDER BY RAND()
+			LIMIT 4;`,
+			[id, id, id],
+		);
+
+		await connection.end();
+		return {
+			rows,
 		};
 	},
 };
