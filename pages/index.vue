@@ -115,9 +115,10 @@ const handleSearch = async () => {
 	}
 };
 
-const handlePageChange = async (page: number) => {
+const handlePageChange = async () => {
 	try {
-		const cachedShops = shopApiService.getCache((page - 1) * 10, 10, true);
+		searchStore.page++;
+		const cachedShops = shopApiService.getCache((searchStore.page - 1) * 10, 10, true);
 		if (cachedShops) {
 			searchStore.shops = cachedShops.shops;
 			searchStore.total = cachedShops.total;
@@ -125,12 +126,14 @@ const handlePageChange = async (page: number) => {
 		}
 		const data = await shopApiService.fetchShops({
 			...searchStore.lastSearchData,
-			current: (page - 1) * 10,
+			current: (searchStore.page - 1) * 10,
 			pageSize: 10,
 			orderBy: searchStore.sortMethod,
 		});
 
-		searchStore.shops = data.shops || [];
+		data.shops.forEach((shop) => {
+			searchStore.shops.push(shop);
+		});
 		searchStore.total = data.total || 0;
 	} catch (e) {
 		return;
@@ -213,13 +216,6 @@ watch(
 );
 
 watch(
-	() => searchStore.page,
-	async () => {
-		Promise.all([scrollToTop(), handlePageChange(searchStore.page)]);
-	},
-);
-
-watch(
 	() => searchStore.sortMethod,
 	async () => {
 		if (searchStore.total === 1) return;
@@ -228,14 +224,21 @@ watch(
 	},
 );
 
-function scrollToTop() {
-	if (process.client) {
-		return new Promise((resolve) => {
-			window.scrollTo({ top: 0, behavior: "smooth" });
-			resolve(true);
-		});
-	}
-}
+// function checkScroll() {
+// 	const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+// 	if (!hasSearched.value) return;
+// 	if (scrollHeight - scrollTop <= clientHeight * 1.5 && !isLoading.value) {
+// 		handlePageChange();
+// 	}
+// }
+
+// onMounted(() => {
+// 	window.addEventListener("scroll", checkScroll);
+// });
+
+// onUnmounted(() => {
+// 	window.removeEventListener("scroll", checkScroll);
+// });
 </script>
 <template>
 	<div class="w-full my-[120px] mx-auto">
@@ -283,12 +286,15 @@ function scrollToTop() {
 						<USelect size="sm" v-model="searchStore.sortMethod" :options="searchStore.sortOptions" />
 					</div>
 					<ShopResult v-for="shop in searchStore.shops" :key="shop.id" :shop="shop" />
-					<UPagination
-						v-if="hasShop && searchStore.total > 10"
-						v-model="searchStore.page"
-						:page-count="10"
-						:total="searchStore.total"
-					/>
+					<UButton
+						v-show="searchStore.shops.length < searchStore.total"
+						variant="ghost"
+						@click="handlePageChange"
+						size="lg"
+						class="justify-center"
+						:loading="isLoading"
+						>{{ isLoading ? "載入中.." : "顯示更多" }}</UButton
+					>
 				</div>
 				<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
 					沒有符合條件的餐廳
