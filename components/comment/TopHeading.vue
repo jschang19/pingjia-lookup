@@ -13,7 +13,7 @@ defineProps<{
 			<div class="flex items-center gap-1">
 				<UIcon name="i-heroicons-star-solid" class="text-yellow-400 text-md" />
 				<span>{{ shopInfo?.averageScore }}</span>
-				<span class="text-sm text-gray-400 dark:text-gray-700">( {{ shopInfo?.commentCount }} 則評論)</span>
+				<span class="text-sm text-gray-400 dark:text-gray-500">( {{ shopInfo?.commentCount }} 則評論 )</span>
 			</div>
 		</div>
 		<div class="flex gap-2">
