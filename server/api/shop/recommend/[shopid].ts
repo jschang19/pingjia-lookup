@@ -27,5 +27,4 @@ export default eventHandler(async (event) => {
 			recommend: parseShopResults(results.rows),
 		}),
 	);
-	return;
 });

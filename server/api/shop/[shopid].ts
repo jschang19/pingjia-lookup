@@ -26,5 +26,4 @@ export default eventHandler(async (event) => {
 			shop: parseSingleShopResult(result),
 		}),
 	);
-	return;
 });

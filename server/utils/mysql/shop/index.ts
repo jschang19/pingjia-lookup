@@ -1,5 +1,5 @@
-import initConnection from "@/server/utils/mysql/connection";
 import { type RowDataPacket } from "mysql2/promise";
+import initConnection from "@/server/utils/mysql/connection";
 
 const ShopService: {
 	getByName: (
@@ -99,7 +99,7 @@ const ShopService: {
 		await connection.end();
 		return {
 			total: totalRows,
-			rows: rows,
+			rows,
 		};
 	},
 
@@ -158,7 +158,7 @@ const ShopService: {
 		await connection.end();
 		return {
 			total: totalRows,
-			rows: rows,
+			rows,
 		};
 	},
 
@@ -220,7 +220,7 @@ const ShopService: {
 		await connection.end();
 		return {
 			total: total[0].total,
-			rows: rows,
+			rows,
 		};
 	},
 

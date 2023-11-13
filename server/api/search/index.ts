@@ -1,6 +1,8 @@
-import ShopService from "@/server/utils/mysql/shop";
 import { traditionToSimple } from "chinese-simple2traditional";
+import { RowDataPacket } from "mysql2/promise";
+import ShopService from "@/server/utils/mysql/shop";
 import { parseShopResults } from "@/server/utils/parse";
+import { type ShopInfo } from "@/types/shop";
 
 export default eventHandler(async (event) => {
 	try {
@@ -24,8 +26,8 @@ export default eventHandler(async (event) => {
 
 		let results: {
 			total: number;
-			rows: any[];
-			shops?: any[];
+			rows: RowDataPacket[];
+			shops?: ShopInfo[];
 		} = { total: 0, rows: [], shops: [] };
 
 		// translate searchName to simplified Chinese
@@ -51,11 +53,9 @@ export default eventHandler(async (event) => {
 				shops: results.shops,
 			}),
 		);
-		return;
 	} catch (e) {
 		console.log(e);
 		setResponseStatus(event, 500);
 		await send(event, "Internal Server Error");
-		return;
 	}
 });
