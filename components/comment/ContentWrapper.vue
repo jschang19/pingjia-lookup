@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface comment {
+interface Comment {
 	id: string;
 	content: string;
 	author: string;
@@ -16,7 +16,7 @@ interface comment {
 
 const prop = defineProps({
 	comment: {
-		type: Object as PropType<comment>,
+		type: Object as PropType<Comment>,
 		required: true,
 	},
 });
@@ -27,7 +27,9 @@ const displayMore = ref(false);
 <template>
 	<div>
 		<div class="flex flex-col gap-2 pt-1 pb-8 dark:border-slate-700">
-			<p class="text-sm font-semibold text-black dark:text-gray-100">{{ prop.comment.author }}</p>
+			<p class="text-sm font-semibold text-black dark:text-gray-100">
+				{{ prop.comment.author }}
+			</p>
 			<div class="flex flex-row">
 				<UIcon
 					v-for="star in prop.comment.scores.average"
@@ -45,15 +47,15 @@ const displayMore = ref(false);
 						: prop.comment.content
 				}}
 				<span
-					class="underline underline-offset-2 dark:text-gray-300"
 					v-if="tooLong && !displayMore"
+					class="underline underline-offset-2 dark:text-gray-300"
 					@click="displayMore = true"
 					>顯示更多</span
 				>
 			</p>
 			<p
-				class="text-sm underline underline-offset-2dark:text-gray-300"
 				v-if="tooLong && displayMore"
+				class="text-sm underline underline-offset-2dark:text-gray-300"
 				@click="displayMore = false"
 			>
 				隱藏

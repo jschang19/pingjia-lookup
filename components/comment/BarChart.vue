@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface ratingCounts {
+interface RatingCounts {
 	0: number;
 	1: number;
 	2: number;
@@ -7,11 +7,11 @@ interface ratingCounts {
 	4: number;
 	5: number;
 }
-type RatingCountKeys = keyof ratingCounts;
+type RatingCountKeys = keyof RatingCounts;
 
-const props = defineProps({
+defineProps({
 	ratingCounts: {
-		type: Object as PropType<ratingCounts>,
+		type: Object as PropType<RatingCounts>,
 		required: true,
 	},
 	total: {
@@ -23,9 +23,9 @@ const props = defineProps({
 
 <template>
 	<div class="flex flex-col-reverse gap-1 w-full">
-		<div class="flex items-center gap-1" v-for="index in 5" :key="index">
+		<div v-for="index in 5" :key="index" class="flex items-center gap-1">
 			<span class="text-xs text-gray-400 dark:text-gray-400">{{ index }}</span>
-			<UProgress :value="ratingCounts[index as RatingCountKeys]" :max="total" />
+			<UProgress :value="Number(ratingCounts[index as RatingCountKeys])" :max="total" />
 			<span class="text-xs text-gray-300 dark:text-gray-400">{{ ratingCounts[index as RatingCountKeys] }}</span>
 		</div>
 	</div>

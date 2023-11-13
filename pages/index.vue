@@ -52,7 +52,7 @@ const shopApiService = {
 		orderBy: string;
 	}): Promise<Response> {
 		isLoading.value = true;
-		const { data, error } = await useFetch<Response>(`/api/search`, {
+		const { data, error } = await useFetch<Response>("/api/search", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -131,9 +131,7 @@ const handlePageChange = async () => {
 			searchStore.shops.push(shop);
 		});
 		searchStore.total = data.total || 0;
-	} catch (e) {
-		return;
-	}
+	} catch (e) {}
 };
 
 const handleSortChange = async (sortMethod: string) => {
@@ -147,15 +145,13 @@ const handleSortChange = async (sortMethod: string) => {
 
 		searchStore.shops = data.shops || [];
 		searchStore.total = data.total || 0;
-	} catch (e) {
-		return;
-	}
+	} catch (e) {}
 };
 
 const { data: cities } = useNuxtData("cities");
 
 if (cities.value && searchStore.cityOptions.length === 0) {
-	searchStore.cityOptions = cities.value.map((city: any) => ({
+	searchStore.cityOptions = cities.value.map((city: { id: string; name: string }) => ({
 		label: city.name,
 		value: city.id,
 	}));
@@ -208,7 +204,9 @@ watch(
 watch(
 	() => searchStore.sortMethod,
 	async () => {
-		if (searchStore.total === 1) return;
+		if (searchStore.total === 1) {
+			return;
+		}
 		searchStore.page = 1;
 		await handleSortChange(searchStore.sortMethod);
 	},
@@ -240,35 +238,36 @@ watch(
 					</USelectMenu>
 					<div class="flex row gap-3 grow">
 						<UInput
+							v-model="searchStore.inputSearchData.name"
 							:disabled="isLoading"
 							placeholder="請輸入餐廳名稱或分類"
 							size="lg"
 							class="grow"
-							v-model="searchStore.inputSearchData.name"
 						/>
-						<UButton :disabled="isLoading" size="lg" color="black" type="submit" class="px-5">搜尋</UButton>
+						<UButton :disabled="isLoading" size="lg" color="black" type="submit" class="px-5"> 搜尋 </UButton>
 					</div>
 				</UForm>
 				<div class="flex justify-start md:justify-end mt-3">
-					<UButton size="xs" color="gray" @click="searchStore.resetSearchData" variant="ghost">清除條件</UButton>
+					<UButton size="xs" color="gray" variant="ghost" @click="searchStore.resetSearchData"> 清除條件 </UButton>
 				</div>
 			</div>
 			<div class="gap-4 my-4">
 				<div v-if="hasShop" class="flex flex-col gap-3">
 					<UDivider />
 					<div class="flex flex-row justify-end gap-2">
-						<USelect size="sm" v-model="searchStore.sortMethod" :options="searchStore.sortOptions" />
+						<USelect v-model="searchStore.sortMethod" size="sm" :options="searchStore.sortOptions" />
 					</div>
 					<ShopResult v-for="shop in searchStore.shops" :key="shop.id" :shop="shop" />
 					<UButton
 						v-show="searchStore.shops.length < searchStore.total"
 						variant="ghost"
-						@click="handlePageChange"
 						size="lg"
 						class="justify-center"
 						:loading="isLoading"
-						>{{ isLoading ? "載入中.." : "顯示更多" }}</UButton
+						@click="handlePageChange"
 					>
+						{{ isLoading ? "載入中.." : "顯示更多" }}
+					</UButton>
 				</div>
 				<div v-else-if="!hasShop && hasSearched && !isLoading" class="text-md text-center text-gray-300 mt-10">
 					沒有符合條件的餐廳

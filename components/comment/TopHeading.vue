@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type ShopInfo } from "~/types/shop";
+import { type ShopDetail } from "~/types/shop";
 defineProps<{
-	shopInfo: ShopInfo;
+	shopInfo: ShopDetail;
 }>();
 </script>
 <template>
@@ -18,13 +18,15 @@ defineProps<{
 		</div>
 		<div class="flex gap-2">
 			<UBadge
+				v-for="dishType in shopInfo.dishTypes"
+				:key="dishType"
 				:ui="{ rounded: 'rounded-full' }"
-				v-for="dishType in shopInfo?.dishTypes"
 				color="black"
 				variant="solid"
 				class="max-w-max"
-				>#{{ dishType }}</UBadge
 			>
+				#{{ dishType }}
+			</UBadge>
 		</div>
 	</div>
 </template>

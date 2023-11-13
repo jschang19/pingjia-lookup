@@ -134,7 +134,9 @@ watch(
 	() => selectedSortOption.value,
 	async () => {
 		if (selectedSortOption.value) {
-			if (total.value < 2) return; // no need to sort
+			if (total.value < 2) {
+				return;
+			} // no need to sort
 			await fecthNewSort(page.value);
 		}
 	},
@@ -159,16 +161,16 @@ useSeoMeta({
 	<div class="w-full mx-auto overflow-hidden">
 		<div v-if="hasShopInfo">
 			<div class="flex flex-col gap-4 pb-6">
-				<CommentTopHeading :shopInfo="shopInfo!" />
+				<CommentTopHeading :shop-info="shopInfo!" />
 				<div class="flex flex-row">
 					<p class="text-xl font-medium">評論</p>
 				</div>
 				<div class="flex flex-row justify-stretch items-center">
 					<div class="flex flex-col gap-1 justify-center items-center w-1/2">
-						<CommentRatingOverview :averageScore="shopInfo?.averageScore!" :total="total" />
+						<CommentRatingOverview :average-score="shopInfo?.averageScore!" :total="total" />
 					</div>
 					<div class="flex justify-center items-start w-2/5 md:w-1/4">
-						<CommentBarChart :ratingCounts="shopInfo?.ratingCounts!" :total="total" />
+						<CommentBarChart :rating-counts="shopInfo?.ratingCounts!" :total="total" />
 					</div>
 				</div>
 				<UDivider />
@@ -176,15 +178,17 @@ useSeoMeta({
 					<div class="flex justify-end pb-2">
 						<USelectMenu
 							v-if="hasReiew"
+							v-model="selectedSortOption"
 							size="sm"
 							class="max-w-max min-w-[125px]"
-							v-model="selectedSortOption"
 							:options="sortOption"
 						/>
 					</div>
 					<div v-if="hasReiew" class="flex flex-col gap-1">
-						<CommentCard v-for="comment in comments" :key="comment.id" :comment="comment" />
-						<UButton v-show="hasMore" class="justify-center" variant="ghost" @click="handleLoadMore">顯示更多</UButton>
+						<CommentContentWrapper v-for="comment in comments" :key="comment.id" :comment="comment" />
+						<UButton v-show="hasMore" class="justify-center" variant="ghost" @click="handleLoadMore">
+							顯示更多
+						</UButton>
 					</div>
 					<div v-else class="text-sm text-center text-gray-500 dark:text-gray-500">目前沒有評論</div>
 				</div>
@@ -195,7 +199,7 @@ useSeoMeta({
 					<p class="text-sm">地址： {{ shopInfo?.cityName }}市 {{ shopInfo?.address }}</p>
 				</div>
 				<UDivider />
-				<div class="flex flex-col gap-2" v-if="recommend!.length > 0">
+				<div v-if="recommend!.length > 0" class="flex flex-col gap-2">
 					<h3 class="text-xl font-medium">你可能還會喜歡⋯</h3>
 					<ShopResult v-for="shop in recommend" :key="shop.id" :shop="shop" />
 				</div>
@@ -206,7 +210,9 @@ useSeoMeta({
 				<div class="text-xl font-bold">餐廳不存在</div>
 				<div class="text-sm">踏破鐵鞋尋覓處，轉角就有得來速</div>
 			</div>
-			<ULink to="/"><UButton size="sm" variant="ghost"> 回首頁 </UButton></ULink>
+			<ULink to="/">
+				<UButton size="sm" variant="ghost"> 回首頁 </UButton>
+			</ULink>
 		</div>
 	</div>
 </template>
