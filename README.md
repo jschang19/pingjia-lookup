@@ -1,10 +1,10 @@
-# Restaurant Comments Lookup (Nuxt3)
+# Pingjia 評呷名 (Nuxt3 Practice Project)
 
-這是個人的 Nuxt3 的練習專案，建立一個餐廳評價查詢全端網站。
+這是個人的練習專案，使用 Nuxt3 建立一個餐廳評價查詢全端網站。
 
 ![banner](https://jcshawn.com/wp-content/uploads/2023/11/restshawn-banner.jpg)
 
-Demo: https://pingjia.jcshawn.com/
+🔗 Demo: https://pingjia.jcshawn.com/
 
 ## Features
 - 根據地區、餐廳名稱查詢餐廳資料與評價
@@ -51,7 +51,7 @@ yarn dev
 ```
 
 ### Database Setup
-如果你的開發環境沒有，可以依照以下步驟安裝 MySQL 資料庫。
+如果你的開發環境還沒有裝 MySQL，可以依照以下步驟安裝 MySQL 資料庫。
 
 先到官網安裝 Docker:
 https://docs.docker.com/get-docker/
@@ -84,7 +84,7 @@ services:
 docker-compose up -d
 ```
 
-現在 MySQL 會在 Port 3306 執行，並且可以使用你設定的帳號密碼連接到資料庫。
+現在 MySQL 會在 Port 3306 執行，你需要將剛剛設定的資料庫連練設定存在 `.env` 中，格式請參考[Environment Variables](#environment_variables)
 ```bash
 mysql -u {user} -p
 # 接著輸入你設定的密碼，你應該看不到密碼輸入的字元
@@ -108,7 +108,6 @@ docker volume rm my-db
 建立 production build:
 
 ```bash
-# npm
 yarn build
 ```
 
@@ -116,6 +115,18 @@ yarn build
 
 ```bash
 yarn preview
+```
+
+## Environment Variables
+
+建立 `.env` 檔案，並且設定以下環境變數:
+
+```env
+DB_HOST= # 你的資料庫主機位置
+DB_PORT= # 你的資料庫連接埠
+DB_USER= # 你的資料庫使用者名稱
+DB_PASSWD= # 你的資料庫使用者密碼
+DB_NAME= # 你的資料庫名稱
 ```
 
 ## Deployment
@@ -150,22 +161,11 @@ docker build -t {image_name} .
 接著你可以使用以下指令啟動 container:
 
 ```bash
-docker run -d --name {container_name} -p 3000:3000 --env-file ./env {image_name}
+docker run -d --name {container_name} -p 3000:3000 --env-file ./.env {image_name}
 ```
 
 p.s. 上方 Dockerfile 參考自[將 Nuxt3 發布至 docker 中，Dockerfile 看這裡就對了](https://www.ruyut.com/2023/04/deploy-nuxt3-to-docker-with-dockerfile.html)
 
-## Environment Variables
-
-建立 `.env` 檔案，並且設定以下環境變數:
-
-```env
-DB_HOST= # 你的資料庫主機位置
-DB_PORT= # 你的資料庫連接埠
-DB_USER= # 你的資料庫使用者名稱
-DB_PASSWD= # 你的資料庫使用者密碼
-DB_NAME= # 你的資料庫名稱
-```
 ## Note
 以下是本專案的一些注意事項:
 - 為了練習前端，此專案是採在「 前端的後端 」( a.k.a Nuxt 3 自帶的 Nitro ) 與資料庫互動，並沒有另建 backend server 用來處理資料庫的 CRUD，實務上建議另建後端來跟資料庫互動。
