@@ -4,6 +4,8 @@
 
 ![banner](https://jcshawn.com/wp-content/uploads/2023/11/restshawn-banner.jpg)
 
+Demo: https://pingjia.jcshawn.com/
+
 ## Features
 - 根據地區、餐廳名稱查詢餐廳資料與評價
 - 顯示餐廳基本資訊與評價
@@ -30,7 +32,6 @@ cd restaurant-comment-lookup
 2. 安裝套件:
 
 ```bash
-# yarn
 yarn install
 ```
 
@@ -46,7 +47,6 @@ mysql -u {user} -p shop < ./sql/example.sql
 啟動測試伺服器，並且在瀏覽器中開啟 `http://localhost:3000`:
 
 ```bash
-# yarn
 yarn dev
 ```
 
