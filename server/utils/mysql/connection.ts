@@ -4,13 +4,11 @@ import mysql from "mysql2/promise";
 // Create a function to initialize the connection
 async function initializeConnection() {
 	try {
-		const connection = await mysql.createConnection({
-			host: process.env.DB_HOST,
-			user: process.env.DB_USER,
-			password: process.env.DB_PASSWD,
-			database: process.env.DB_NAME,
-			port: Number(process.env.DB_PORT),
-		});
+		if (!process.env.DATABASE_URL) {
+			throw new Error("DATABASE_URL not found");
+		}
+
+		const connection = await mysql.createConnection(process.env.DATABASE_URL);
 
 		return connection;
 	} catch (error) {
