@@ -43,17 +43,6 @@ mysql -u {user} -p shop < ./sql/example.sql
 ```
 如果你還沒有建立 MySQL，可以參考下方的 [Database Setup](#database_setup) 來建立資料庫與資料表。
 
-4. 打開 `server/utils/mysql/connection.ts`，將 connection 改成下方這段:
-
-```typescript
-const connection = await mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWD,
-  database: process.env.DB_NAME,
-  port: Number(process.env.DB_PORT),
-});
-```
 ## Development Server
 
 啟動測試伺服器，並且在瀏覽器中開啟 `http://localhost:3000`:
