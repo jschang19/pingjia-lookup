@@ -207,7 +207,7 @@ const ShopService: {
 										shopid
 						) AS commentStats ON s.shopid = commentStats.shopid 
 				WHERE 
-						s.shopname LIKE ? 
+						c.CityID = ? AND s.ShopName LIKE ?
 				ORDER BY 
 						${orderBy}
 				LIMIT ?, ?;
